@@ -1,327 +1,183 @@
-<script setup>
-import {ref, onMounted} from 'vue';
-import axios from 'axios';
-import MovieCard from '../components/MovieCard.vue';
-import {Search} from '@element-plus/icons-vue';
-import {ElSkeleton, ElSkeletonItem, ElCarousel, ElCarouselItem} from 'element-plus';
-
-const popularMovies = ref([]);
-const topRatedMovies = ref([]);
-const upcomingMovies = ref([]);
-const trendingMovies = ref([]);
-const loading = ref(true);
-const error = ref(null);
-const searchQuery = ref('');
-
-import apiService from '../utils/apiService';
-
-const fetchMovies = async () => {
-  try {
-    loading.value = true;
-    error.value = null;
-
-    // First check if API is available
-    try {
-      const testResponse = await apiService.testApi();
-      console.log('API Test response:', testResponse.data);
-    } catch (testError) {
-      console.error('API test failed:', testError);
-      error.value = 'Cannot connect to API server. Is the backend running?';
-      loading.value = false;
-      return;
-    }
-
-    // Test TMDB API directly to isolate if the issue is with our backend or TMDB itself
-    try {
-      console.log('Testing direct connection to TMDB API...');
-      const directTest = await apiService.testTmdbDirectly();
-      console.log('Direct TMDB test successful:', directTest.status);
-    } catch (tmdbError) {
-      console.error('Direct TMDB test failed:', tmdbError);
-      error.value = 'Cannot connect to TMDB API directly. There might be connectivity issues.';
-      loading.value = false;
-      return;
-    }
-
-    // Use Promise.allSettled to continue even if some API calls fail
-    const results = await Promise.allSettled([
-      apiService.getPopularMovies(),
-      apiService.getTopRatedMovies(),
-      apiService.getUpcomingMovies(),
-      apiService.getTrendingMovies()
-    ]);
-
-    // Process results that succeeded
-    let successCount = 0;
-
-    if (results[0].status === 'fulfilled') {
-      popularMovies.value = results[0].value.data.results?.slice(0, 8) || [];
-      console.log('Popular movies loaded:', popularMovies.value.length);
-      successCount++;
-    } else {
-      console.error('Failed to load popular movies:', results[0].reason);
-    }
-
-    if (results[1].status === 'fulfilled') {
-      topRatedMovies.value = results[1].value.data.results?.slice(0, 8) || [];
-      console.log('Top rated movies loaded:', topRatedMovies.value.length);
-      successCount++;
-    } else {
-      console.error('Failed to load top rated movies:', results[1].reason);
-    }
-
-    if (results[2].status === 'fulfilled') {
-      upcomingMovies.value = results[2].value.data.results?.slice(0, 8) || [];
-      console.log('Upcoming movies loaded:', upcomingMovies.value.length);
-      successCount++;
-    } else {
-      console.error('Failed to load upcoming movies:', results[2].reason);
-    }
-
-    if (results[3].status === 'fulfilled') {
-      trendingMovies.value = results[3].value.data.results?.slice(0, 5) || [];
-      console.log('Trending movies loaded:', trendingMovies.value.length);
-      successCount++;
-    } else {
-      console.error('Failed to load trending movies:', results[3].reason);
-    }
-
-    // Show error if none of the API calls succeeded
-    if (successCount === 0) {
-      error.value = 'Failed to load any movie data. Please try again later.';
-    } else if (successCount < 4) {
-      console.warn(`Only ${successCount} out of 4 movie categories loaded successfully`);
-    }
-
-  } catch (err) {
-    console.error('Error in fetchMovies:', err);
-    error.value = 'Failed to load movies. Please try again later.';
-  } finally {
-    loading.value = false;
-  }
-};
-
-const searchMovies = () => {
-  if (searchQuery.value.trim()) {
-    // Navigate to search results page with query
-    window.location.href = `/search?query=${encodeURIComponent(searchQuery.value)}`;
-  }
-};
-
-onMounted(() => {
-  fetchMovies();
-});
-
-const imageBaseUrl = 'https://image.tmdb.org/t/p/original';
-</script>
-
 <template>
-  <div class="home-view">
-    <!-- Search Bar -->
-    <section class="search-section">
-      <el-row :gutter="20" justify="center">
-        <el-col :span="16">
-          <el-input
+  <div class="home">
+    <el-container>
+      <el-main>
+        <el-row :gutter="20" justify="center">
+          <el-col :span="16">
+            <el-input
               v-model="searchQuery"
-              placeholder="Search for movies..."
+              placeholder="Search movies..."
               class="search-input"
               @keyup.enter="searchMovies"
+            >
+              <template #append>
+                <el-button @click="searchMovies">
+                  <el-icon><Search /></el-icon>
+                </el-button>
+              </template>
+            </el-input>
+          </el-col>
+        </el-row>
+
+        <el-row :gutter="20" class="movie-grid">
+          <el-col
+            v-for="movie in movies"
+            :key="movie.id"
+            :xs="24"
+            :sm="12"
+            :md="8"
+            :lg="6"
+            :xl="4"
           >
-            <template #append>
-              <el-button @click="searchMovies">
-                <el-icon>
-                  <Search/>
-                </el-icon>
-              </el-button>
-            </template>
-          </el-input>
-        </el-col>
-      </el-row>
-    </section>
-
-    <!-- Hero Section with Carousel -->
-    <section class="hero-section" v-if="!loading && !error">
-      <el-carousel :interval="5000" height="500px" indicator-position="outside" arrow="always">
-        <el-carousel-item v-for="movie in trendingMovies" :key="movie.id">
-          <div class="carousel-item" :style="{
-            backgroundImage: `linear-gradient(to bottom, rgba(0,0,0,0.2), rgba(0,0,0,0.8)), url(${imageBaseUrl}${movie.backdrop_path})`
-          }">
-            <div class="carousel-content">
-              <h2>{{ movie.title }}</h2>
-              <p>{{ movie.overview }}</p>
-              <router-link :to="`/movie/${movie.id}`" class="hero-btn">
-                View Details
-              </router-link>
-            </div>
-          </div>
-        </el-carousel-item>
-      </el-carousel>
-    </section>
-
-    <!-- Loading Skeleton -->
-    <div v-if="loading" class="loading-skeleton">
-      <el-skeleton :rows="3" animated/>
-    </div>
-
-    <!-- Error Message -->
-    <div v-if="error" class="error-message">
-      <el-alert :title="error" type="error" show-icon/>
-    </div>
-
-    <!-- Movie Sections -->
-    <template v-if="!loading && !error">
-      <!-- Popular Movies Section -->
-      <section class="movie-section">
-        <div class="section-header">
-          <h2>Popular Movies</h2>
-          <router-link to="/movies/popular" class="view-all">View All</router-link>
-        </div>
-        <div class="movie-grid">
-          <div v-for="movie in popularMovies" :key="movie.id" class="movie-item">
-            <MovieCard :movie="movie"/>
-          </div>
-        </div>
-      </section>
-
-      <!-- Top Rated Movies Section -->
-      <section class="movie-section">
-        <div class="section-header">
-          <h2>Top Rated</h2>
-          <router-link to="/movies/top-rated" class="view-all">View All</router-link>
-        </div>
-        <div class="movie-grid">
-          <div v-for="movie in topRatedMovies" :key="movie.id" class="movie-item">
-            <MovieCard :movie="movie"/>
-          </div>
-        </div>
-      </section>
-
-      <!-- Upcoming Movies Section -->
-      <section class="movie-section">
-        <div class="section-header">
-          <h2>Coming Soon</h2>
-          <router-link to="/movies/upcoming" class="view-all">View All</router-link>
-        </div>
-        <div class="movie-grid">
-          <div v-for="movie in upcomingMovies" :key="movie.id" class="movie-item">
-            <MovieCard :movie="movie"/>
-          </div>
-        </div>
-      </section>
-    </template>
+            <el-card :body-style="{ padding: '0px' }" class="movie-card">
+              <img :src="movie.poster" class="movie-poster" />
+              <div class="movie-info">
+                <h3>{{ movie.title }}</h3>
+                <p>{{ movie.year }}</p>
+                <div class="rating-section">
+                  <el-rate
+                    v-model="movie.starRating"
+                    disabled
+                    text-color="#ff9900"
+                  />
+                  <span class="rating-text">{{ movie.rating }}</span>
+                </div>
+                <el-button
+                  type="primary"
+                  @click="goToDetail(movie.id)"
+                  class="detail-button"
+                >
+                  View Details
+                </el-button>
+              </div>
+            </el-card>
+          </el-col>
+        </el-row>
+      </el-main>
+    </el-container>
   </div>
 </template>
 
-<style scoped>
-.home-view {
-  padding-bottom: 2rem;
+<script setup>
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { Search } from '@element-plus/icons-vue'
+import axios from 'axios'
+
+const router = useRouter()
+const searchQuery = ref('')
+const movies = ref([])
+
+const searchMovies = async () => {
+  if (!searchQuery.value) return
+  try {
+    const response = await axios.get(`http://localhost:5000/api/movies/search?query=${encodeURIComponent(searchQuery.value)}`)
+    movies.value = response.data.results.map(movie => ({
+      id: movie.id,
+      title: movie.title,
+      year: movie.release_date ? new Date(movie.release_date).getFullYear() : 'Unknown',
+      poster: movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : '/placeholder.jpg',
+      rating: Math.round(movie.vote_average * 10) / 10, // Round to 1 decimal place, keep 10-point scale
+      starRating: Math.round((movie.vote_average / 2) * 10) / 10 // Convert to 5-star scale for display
+    }))
+  } catch (error) {
+    console.error('Error fetching movies:', error)
+  }
 }
 
-.search-section {
-  margin-bottom: 2rem;
+const goToDetail = (movieId) => {
+  router.push(`/movie/${movieId}`)
+}
+
+// 获取初始电影列表
+const fetchInitialMovies = async () => {
+  try {
+    console.log('Fetching movies from backend...')
+    const response = await axios.get('http://localhost:5000/api/movies/popular')
+    console.log('Response received:', response.data)
+    
+    if (response.data && response.data.results) {
+      movies.value = response.data.results.map(movie => ({
+        id: movie.id,
+        title: movie.title,
+        year: movie.release_date ? new Date(movie.release_date).getFullYear() : 'Unknown',
+        poster: movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : '/placeholder.jpg',
+        rating: Math.round(movie.vote_average * 10) / 10, // Round to 1 decimal place, keep 10-point scale
+        starRating: Math.round((movie.vote_average / 2) * 10) / 10 // Convert to 5-star scale for display
+      }))
+      console.log('Movies loaded:', movies.value.length)
+    } else {
+      console.error('No results in response:', response.data)
+    }
+  } catch (error) {
+    console.error('Error fetching initial movies:', error)
+    console.error('Error details:', error.response ? error.response.data : error.message)
+  }
+}
+
+fetchInitialMovies()
+</script>
+
+<style scoped>
+.home {
+  padding: 20px;
 }
 
 .search-input {
-  margin-bottom: 1rem;
-}
-
-.hero-section {
-  margin-bottom: 2rem;
-}
-
-.carousel-item {
-  height: 100%;
-  background-size: cover;
-  background-position: center;
-  display: flex;
-  align-items: flex-end;
-}
-
-.carousel-content {
-  color: white;
-  padding: 2rem;
-  max-width: 600px;
-}
-
-.carousel-content h2 {
-  font-size: 2.5rem;
-  margin: 0 0 1rem;
-}
-
-.carousel-content p {
-  font-size: 1.1rem;
-  margin: 0 0 1.5rem;
-  line-height: 1.5;
-}
-
-.hero-btn {
-  background-color: var(--secondary-color);
-  color: white;
-  padding: 0.75rem 1.5rem;
-  border-radius: 4px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  transition: background-color 0.3s;
-  display: inline-block;
-}
-
-.hero-btn:hover {
-  background-color: #3ba676;
-}
-
-.section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1.5rem;
-}
-
-.section-header h2 {
-  font-size: 1.5rem;
-  font-weight: 600;
-  margin: 0;
-  color: var(--text-color);
-}
-
-.view-all {
-  font-weight: 500;
-  transition: color 0.2s;
-}
-
-.movie-section {
-  margin-bottom: 3rem;
+  margin-bottom: 30px;
 }
 
 .movie-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 1.5rem;
+  margin-top: 20px;
 }
 
-.loading-skeleton {
-  padding: 2rem;
-  background-color: var(--card-bg);
-  border-radius: 8px;
-  margin-bottom: 2rem;
+.movie-card {
+  margin-bottom: 20px;
+  transition: transform 0.3s;
 }
 
-.error-message {
-  margin: 2rem 0;
+.movie-card:hover {
+  transform: translateY(-5px);
 }
 
-@media (max-width: 768px) {
-  .carousel-content h2 {
-    font-size: 1.8rem;
-  }
+.movie-poster {
+  width: 100%;
+  height: 300px;
+  object-fit: cover;
+}
 
-  .carousel-content p {
-    font-size: 1rem;
-  }
+.movie-info {
+  padding: 14px;
+}
 
-  .movie-grid {
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    gap: 1rem;
-  }
+.movie-info h3 {
+  margin: 0;
+  font-size: 16px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.movie-info p {
+  color: #666;
+  margin: 5px 0;
+}
+
+.rating-section {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0;
+}
+
+.rating-text {
+  font-size: 14px;
+  color: #666;
+  font-weight: 500;
+}
+
+.detail-button {
+  width: 100%;
+  margin-top: 10px;
 }
 </style>
