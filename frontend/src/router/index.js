@@ -1,9 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
-import MovieDetail from '../views/MovieDetail.vue'
-import SearchResults from '../views/SearchResults.vue'
-import { createRouter, createWebHistory } from 'vue-router'
-import HomeView from '../views/HomeView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -45,28 +41,6 @@ const router = createRouter({
       return { top: 0 }
     }
   }
-})
-
-export default router
-const router = createRouter({
-  history: createWebHistory(),
-  routes: [
-    {
-      path: '/',
-      name: 'home',
-      component: HomeView
-    },
-    {
-      path: '/movie/:id',
-      name: 'movie-detail',
-      component: MovieDetail
-    },
-    {
-      path: '/search',
-      name: 'search',
-      component: SearchResults
-    }
-  ]
 })
 
 export default router

@@ -1,9 +1,9 @@
 <script setup>
-import {ref, onMounted} from 'vue';
+import { ref, onMounted } from 'vue';
 import axios from 'axios';
 import MovieCard from '../components/MovieCard.vue';
-import {Search} from '@element-plus/icons-vue';
-import {ElSkeleton, ElSkeletonItem, ElCarousel, ElCarouselItem} from 'element-plus';
+import { Search } from '@element-plus/icons-vue';
+import { ElSkeleton, ElSkeletonItem, ElCarousel, ElCarouselItem } from 'element-plus';
 
 const popularMovies = ref([]);
 const topRatedMovies = ref([]);
@@ -13,88 +13,24 @@ const loading = ref(true);
 const error = ref(null);
 const searchQuery = ref('');
 
-import apiService from '../utils/apiService';
-
 const fetchMovies = async () => {
   try {
     loading.value = true;
     error.value = null;
 
-    // First check if API is available
-    try {
-      const testResponse = await apiService.testApi();
-      console.log('API Test response:', testResponse.data);
-    } catch (testError) {
-      console.error('API test failed:', testError);
-      error.value = 'Cannot connect to API server. Is the backend running?';
-      loading.value = false;
-      return;
-    }
-
-    // Test TMDB API directly to isolate if the issue is with our backend or TMDB itself
-    try {
-      console.log('Testing direct connection to TMDB API...');
-      const directTest = await apiService.testTmdbDirectly();
-      console.log('Direct TMDB test successful:', directTest.status);
-    } catch (tmdbError) {
-      console.error('Direct TMDB test failed:', tmdbError);
-      error.value = 'Cannot connect to TMDB API directly. There might be connectivity issues.';
-      loading.value = false;
-      return;
-    }
-
-    // Use Promise.allSettled to continue even if some API calls fail
-    const results = await Promise.allSettled([
-      apiService.getPopularMovies(),
-      apiService.getTopRatedMovies(),
-      apiService.getUpcomingMovies(),
-      apiService.getTrendingMovies()
+    const [popularRes, topRatedRes, upcomingRes, trendingRes] = await Promise.all([
+      axios.get('http://127.0.0.1:5000/api/movies/popular'),
+      axios.get('http://127.0.0.1:5000/api/movies/top-rated'),
+      axios.get('http://127.0.0.1:5000/api/movies/upcoming'),
+      axios.get('http://127.0.0.1:5000/api/movies/trending')
     ]);
 
-    // Process results that succeeded
-    let successCount = 0;
-
-    if (results[0].status === 'fulfilled') {
-      popularMovies.value = results[0].value.data.results?.slice(0, 8) || [];
-      console.log('Popular movies loaded:', popularMovies.value.length);
-      successCount++;
-    } else {
-      console.error('Failed to load popular movies:', results[0].reason);
-    }
-
-    if (results[1].status === 'fulfilled') {
-      topRatedMovies.value = results[1].value.data.results?.slice(0, 8) || [];
-      console.log('Top rated movies loaded:', topRatedMovies.value.length);
-      successCount++;
-    } else {
-      console.error('Failed to load top rated movies:', results[1].reason);
-    }
-
-    if (results[2].status === 'fulfilled') {
-      upcomingMovies.value = results[2].value.data.results?.slice(0, 8) || [];
-      console.log('Upcoming movies loaded:', upcomingMovies.value.length);
-      successCount++;
-    } else {
-      console.error('Failed to load upcoming movies:', results[2].reason);
-    }
-
-    if (results[3].status === 'fulfilled') {
-      trendingMovies.value = results[3].value.data.results?.slice(0, 5) || [];
-      console.log('Trending movies loaded:', trendingMovies.value.length);
-      successCount++;
-    } else {
-      console.error('Failed to load trending movies:', results[3].reason);
-    }
-
-    // Show error if none of the API calls succeeded
-    if (successCount === 0) {
-      error.value = 'Failed to load any movie data. Please try again later.';
-    } else if (successCount < 4) {
-      console.warn(`Only ${successCount} out of 4 movie categories loaded successfully`);
-    }
-
+    popularMovies.value = popularRes.data.results.slice(0, 8);
+    topRatedMovies.value = topRatedRes.data.results.slice(0, 8);
+    upcomingMovies.value = upcomingRes.data.results.slice(0, 8);
+    trendingMovies.value = trendingRes.data.results.slice(0, 5);
   } catch (err) {
-    console.error('Error in fetchMovies:', err);
+    console.error('Error fetching movies:', err);
     error.value = 'Failed to load movies. Please try again later.';
   } finally {
     loading.value = false;
@@ -122,16 +58,14 @@ const imageBaseUrl = 'https://image.tmdb.org/t/p/original';
       <el-row :gutter="20" justify="center">
         <el-col :span="16">
           <el-input
-              v-model="searchQuery"
-              placeholder="Search for movies..."
-              class="search-input"
-              @keyup.enter="searchMovies"
+            v-model="searchQuery"
+            placeholder="Search for movies..."
+            class="search-input"
+            @keyup.enter="searchMovies"
           >
             <template #append>
               <el-button @click="searchMovies">
-                <el-icon>
-                  <Search/>
-                </el-icon>
+                <el-icon><Search /></el-icon>
               </el-button>
             </template>
           </el-input>
@@ -160,12 +94,12 @@ const imageBaseUrl = 'https://image.tmdb.org/t/p/original';
 
     <!-- Loading Skeleton -->
     <div v-if="loading" class="loading-skeleton">
-      <el-skeleton :rows="3" animated/>
+      <el-skeleton :rows="3" animated />
     </div>
 
     <!-- Error Message -->
     <div v-if="error" class="error-message">
-      <el-alert :title="error" type="error" show-icon/>
+      <el-alert :title="error" type="error" show-icon />
     </div>
 
     <!-- Movie Sections -->
@@ -178,7 +112,7 @@ const imageBaseUrl = 'https://image.tmdb.org/t/p/original';
         </div>
         <div class="movie-grid">
           <div v-for="movie in popularMovies" :key="movie.id" class="movie-item">
-            <MovieCard :movie="movie"/>
+            <MovieCard :movie="movie" />
           </div>
         </div>
       </section>
@@ -191,7 +125,7 @@ const imageBaseUrl = 'https://image.tmdb.org/t/p/original';
         </div>
         <div class="movie-grid">
           <div v-for="movie in topRatedMovies" :key="movie.id" class="movie-item">
-            <MovieCard :movie="movie"/>
+            <MovieCard :movie="movie" />
           </div>
         </div>
       </section>
@@ -204,7 +138,7 @@ const imageBaseUrl = 'https://image.tmdb.org/t/p/original';
         </div>
         <div class="movie-grid">
           <div v-for="movie in upcomingMovies" :key="movie.id" class="movie-item">
-            <MovieCard :movie="movie"/>
+            <MovieCard :movie="movie" />
           </div>
         </div>
       </section>

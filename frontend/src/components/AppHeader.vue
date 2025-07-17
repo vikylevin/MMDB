@@ -1,6 +1,6 @@
 <script setup>
-import { ref } from 'vue';
-import { Search } from '@element-plus/icons-vue';
+import {ref} from 'vue';
+import {Search} from '@element-plus/icons-vue';
 
 defineProps({
   darkMode: Boolean
@@ -27,38 +27,46 @@ const toggleMenu = () => {
     <div class="header-container">
       <div class="logo-container">
         <router-link to="/" class="logo">
-          <span class="logo-text">MovieReviews</span>
+          <span class="logo-text">MMDb</span>
         </router-link>
       </div>
 
       <div class="nav-container" :class="{ 'menu-open': isMenuOpen }">
         <nav class="main-nav">
           <ul>
-            <li><router-link to="/">Home</router-link></li>
-            <li><router-link to="/movies/popular">Popular</router-link></li>
-            <li><router-link to="/movies/top-rated">Top Rated</router-link></li>
-            <li><router-link to="/movies/upcoming">Upcoming</router-link></li>
+            <li>
+              <router-link to="/">Home</router-link>
+            </li>
+            <li>
+              <router-link to="/movies/popular">Popular</router-link>
+            </li>
+            <li>
+              <router-link to="/movies/top-rated">Top Rated</router-link>
+            </li>
+            <li>
+              <router-link to="/movies/upcoming">Upcoming</router-link>
+            </li>
           </ul>
         </nav>
 
         <div class="search-container">
           <el-input
-            v-model="searchQuery"
-            placeholder="Search for movies..."
-            @keyup.enter="handleSearch"
-            class="search-input"
+              v-model="searchQuery"
+              placeholder="Search for movies..."
+              @keyup.enter="handleSearch"
+              class="search-input"
           >
             <template #append>
-              <el-button :icon="Search" @click="handleSearch" />
+              <el-button :icon="Search" @click="handleSearch"/>
             </template>
           </el-input>
         </div>
 
         <div class="controls">
-          <el-button 
-            circle 
-            @click="emit('toggle-dark-mode')" 
-            :icon="darkMode ? 'Sunny' : 'Moon'" 
+          <el-button
+              circle
+              @click="emit('toggle-dark-mode')"
+              :icon="darkMode ? 'Sunny' : 'Moon'"
           />
         </div>
       </div>
@@ -93,6 +101,7 @@ const toggleMenu = () => {
 .logo-container {
   display: flex;
   align-items: center;
+  min-width: 100px;  /* Ensuring minimum width for the logo container */
 }
 
 .logo {
@@ -106,6 +115,7 @@ const toggleMenu = () => {
   display: flex;
   align-items: center;
   gap: 2rem;
+  margin-left: 2rem;  /* Adding left margin to create more space */
 }
 
 .main-nav ul {

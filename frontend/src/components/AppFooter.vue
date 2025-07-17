@@ -8,7 +8,7 @@ const currentYear = new Date().getFullYear();
     <div class="footer-container">
       <div class="footer-content">
         <div class="footer-section">
-          <h3>About MovieReviews</h3>
+          <h3>About MMDb</h3>
           <p>Your go-to platform for discovering, reviewing, and discussing the latest movies from around the world.</p>
         </div>
 
@@ -33,7 +33,7 @@ const currentYear = new Date().getFullYear();
       </div>
 
       <div class="copyright">
-        <p>&copy; {{ currentYear }} MovieReviews. All rights reserved.</p>
+        <p>&copy; {{ currentYear }} MMDb. All rights reserved.</p>
         <p>Powered by TMDB API</p>
       </div>
     </div>

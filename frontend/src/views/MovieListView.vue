@@ -29,7 +29,7 @@ const fetchMovies = async (page = 1) => {
     loading.value = true;
     error.value = null;
 
-    let endpoint = `http://localhost:5000/api/movies/${category.value}`;
+    let endpoint = `http://127.0.0.1:5000/api/movies/${category.value}`;
     const response = await axios.get(endpoint, {
       params: { page }
     });

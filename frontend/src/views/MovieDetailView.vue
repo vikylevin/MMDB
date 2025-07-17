@@ -28,8 +28,8 @@ const fetchMovieDetails = async () => {
     error.value = null;
 
     const [movieRes, reviewsRes] = await Promise.all([
-      axios.get(`http://localhost:5000/api/movies/${movieId.value}`),
-      axios.get(`http://localhost:5000/api/movies/${movieId.value}/reviews`)
+      axios.get(`http://127.0.0.1:5000/api/movies/${movieId.value}`),
+      axios.get(`http://127.0.0.1:5000/api/movies/${movieId.value}/reviews`)
     ]);
 
     movie.value = movieRes.data;
