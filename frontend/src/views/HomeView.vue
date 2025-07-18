@@ -1,183 +1,106 @@
 <template>
-  <div class="home">
-    <el-container>
-      <el-main>
-        <el-row :gutter="20" justify="center">
-          <el-col :span="16">
-            <el-input
-              v-model="searchQuery"
-              placeholder="Search movies..."
-              class="search-input"
-              @keyup.enter="searchMovies"
-            >
-              <template #append>
-                <el-button @click="searchMovies">
-                  <el-icon><Search /></el-icon>
-                </el-button>
-              </template>
-            </el-input>
-          </el-col>
-        </el-row>
+  <div class="router-view-container">
+    <el-row v-loading="loading" :gutter="20">
+      <el-col
+        v-for="movie in movies"
+        :key="movie.id"
+        :xs="24"
+        :sm="12"
+        :md="8"
+        :lg="6"
+        :xl="4"
+      >
+        <MovieCard :movie="movie" />
+      </el-col>
+    </el-row>
 
-        <el-row :gutter="20" class="movie-grid">
-          <el-col
-            v-for="movie in movies"
-            :key="movie.id"
-            :xs="24"
-            :sm="12"
-            :md="8"
-            :lg="6"
-            :xl="4"
-          >
-            <el-card :body-style="{ padding: '0px' }" class="movie-card">
-              <img :src="movie.poster" class="movie-poster" />
-              <div class="movie-info">
-                <h3>{{ movie.title }}</h3>
-                <p>{{ movie.year }}</p>
-                <div class="rating-section">
-                  <el-rate
-                    v-model="movie.starRating"
-                    disabled
-                    text-color="#ff9900"
-                  />
-                  <span class="rating-text">{{ movie.rating }}</span>
-                </div>
-                <el-button
-                  type="primary"
-                  @click="goToDetail(movie.id)"
-                  class="detail-button"
-                >
-                  View Details
-                </el-button>
-              </div>
-            </el-card>
-          </el-col>
-        </el-row>
-      </el-main>
-    </el-container>
+    <el-row justify="center" class="pagination-row">
+      <el-pagination
+        v-if="totalPages > 1"
+        :current-page="currentPage"
+        :page-size="18"
+        :total="totalPages * 18"
+        @current-change="handlePageChange"
+        layout="prev, pager, next, jumper"
+        :pager-count="7"
+        background
+      />
+    </el-row>
   </div>
 </template>
 
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { Search } from '@element-plus/icons-vue'
 import axios from 'axios'
+import MovieCard from '../components/MovieCard.vue'
 
 const router = useRouter()
-const searchQuery = ref('')
 const movies = ref([])
+const loading = ref(false)
+const currentPage = ref(1)
+const totalPages = ref(0)
 
-const searchMovies = async () => {
-  if (!searchQuery.value) return
+const fetchMovies = async (page = 1) => {
   try {
-    const response = await axios.get(`http://localhost:5000/api/movies/search?query=${encodeURIComponent(searchQuery.value)}`)
-    movies.value = response.data.results.map(movie => ({
-      id: movie.id,
-      title: movie.title,
-      year: movie.release_date ? new Date(movie.release_date).getFullYear() : 'Unknown',
-      poster: movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : '/placeholder.jpg',
-      rating: Math.round(movie.vote_average * 10) / 10, // Round to 1 decimal place, keep 10-point scale
-      starRating: Math.round((movie.vote_average / 2) * 10) / 10 // Convert to 5-star scale for display
-    }))
-  } catch (error) {
-    console.error('Error fetching movies:', error)
-  }
-}
+    loading.value = true
+    const response = await axios.get('http://localhost:5000/api/movies/popular', {
+      params: { page }
+    })
 
-const goToDetail = (movieId) => {
-  router.push(`/movie/${movieId}`)
-}
-
-// 获取初始电影列表
-const fetchInitialMovies = async () => {
-  try {
-    console.log('Fetching movies from backend...')
-    const response = await axios.get('http://localhost:5000/api/movies/popular')
-    console.log('Response received:', response.data)
-    
     if (response.data && response.data.results) {
       movies.value = response.data.results.map(movie => ({
         id: movie.id,
         title: movie.title,
         year: movie.release_date ? new Date(movie.release_date).getFullYear() : 'Unknown',
         poster: movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : '/placeholder.jpg',
-        rating: Math.round(movie.vote_average * 10) / 10, // Round to 1 decimal place, keep 10-point scale
-        starRating: Math.round((movie.vote_average / 2) * 10) / 10 // Convert to 5-star scale for display
+        rating: Math.round(movie.vote_average * 10) / 10,
+        starRating: Math.round((movie.vote_average / 2) * 10) / 10
       }))
-      console.log('Movies loaded:', movies.value.length)
-    } else {
-      console.error('No results in response:', response.data)
+
+      totalPages.value = response.data.total_pages
+      currentPage.value = page
+      window.scrollTo({ top: 0, behavior: 'smooth' })
     }
   } catch (error) {
-    console.error('Error fetching initial movies:', error)
-    console.error('Error details:', error.response ? error.response.data : error.message)
+    console.error('Error fetching movies:', error)
+  } finally {
+    loading.value = false
   }
 }
 
-fetchInitialMovies()
+const handlePageChange = (page) => {
+  fetchMovies(page)
+}
+
+// 初始化加载
+fetchMovies(1)
 </script>
 
 <style scoped>
-.home {
-  padding: 20px;
-}
 
-.search-input {
-  margin-bottom: 30px;
-}
-
-.movie-grid {
-  margin-top: 20px;
-}
-
-.movie-card {
-  margin-bottom: 20px;
-  transition: transform 0.3s;
-}
-
-.movie-card:hover {
-  transform: translateY(-5px);
-}
-
-.movie-poster {
-  width: 100%;
-  height: 300px;
-  object-fit: cover;
-}
-
-.movie-info {
-  padding: 14px;
-}
-
-.movie-info h3 {
-  margin: 0;
-  font-size: 16px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.movie-info p {
-  color: #666;
-  margin: 5px 0;
-}
-
-.rating-section {
+.pagination-row {
+  margin: 30px 0;
+  padding-bottom: 20px;
   display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 8px 0;
+  justify-content: center;
 }
 
-.rating-text {
-  font-size: 14px;
-  color: #666;
-  font-weight: 500;
+:deep(.el-pagination) {
+  --el-pagination-hover-color: var(--primary-color);
+  --el-pagination-button-color: var(--text-color);
+  --el-pagination-font-size: 14px;
 }
 
-.detail-button {
-  width: 100%;
-  margin-top: 10px;
+:deep(.el-pagination.is-background .el-pager li:not(.is-disabled).is-active) {
+  background-color: var(--primary-color);
+}
+
+:deep(.el-pagination .el-input__inner) {
+  text-align: center;
+}
+
+.el-row {
+  margin-bottom: 20px;
 }
 </style>

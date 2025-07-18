@@ -22,6 +22,7 @@ const toggleDarkMode = () => {
 </template>
 
 <style>
+/* Global CSS Variables */
 :root {
   --primary-color: #2c3e50;
   --secondary-color: #42b883;
@@ -29,11 +30,25 @@ const toggleDarkMode = () => {
   --bg-color: #f5f5f5;
   --card-bg: #ffffff;
   --border-color: #eaeaea;
+  --container-width: 1440px;
+  --content-width: 1400px;
+}
+
+/* Base Styles */
+html {
+  overflow-y: scroll;
+}
+
+html, body {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  margin: 0;
+  padding: 0;
 }
 
 body {
-  margin: 0;
-  padding: 0;
+  min-height: 100vh;
   font-family: 'Inter', 'Avenir', Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -41,6 +56,7 @@ body {
   color: var(--text-color);
 }
 
+/* Dark Mode */
 body.dark-mode {
   --primary-color: #42b883;
   --secondary-color: #3eaf7c;
@@ -50,7 +66,18 @@ body.dark-mode {
   --border-color: #333;
 }
 
+/* Layout Container Styles */
+#app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
 .app-container {
+  width: 100%;
+  max-width: var(--container-width);
+  margin: 0 auto;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -58,12 +85,22 @@ body.dark-mode {
 
 .main-content {
   flex: 1;
-  padding: 1rem;
-  max-width: 1280px;
-  margin: 0 auto;
   width: 100%;
+  max-width: var(--content-width);
+  margin: 0 auto;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
 }
 
+/* Router View Container */
+.router-view-container {
+  width: 100%;
+  max-width: var(--content-width);
+  margin: 0 auto;
+}
+
+/* Common Elements */
 a {
   color: var(--secondary-color);
   text-decoration: none;

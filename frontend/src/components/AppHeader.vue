@@ -1,6 +1,7 @@
 <script setup>
-import {ref} from 'vue';
-import {Search} from '@element-plus/icons-vue';
+import { ref } from 'vue';
+import { Search, UserFilled } from '@element-plus/icons-vue';
+import AuthDialog from './AuthDialog.vue';
 
 defineProps({
   darkMode: Boolean
@@ -9,6 +10,8 @@ defineProps({
 const emit = defineEmits(['toggle-dark-mode']);
 const searchQuery = ref('');
 const isMenuOpen = ref(false);
+const showAuthDialog = ref(false);
+const currentUser = ref(null);
 
 const handleSearch = () => {
   if (searchQuery.value.trim()) {
@@ -19,6 +22,22 @@ const handleSearch = () => {
 
 const toggleMenu = () => {
   isMenuOpen.value = !isMenuOpen.value;
+};
+
+const handleAuthSuccess = (user) => {
+  currentUser.value = user;
+  showAuthDialog.value = false;
+};
+
+const handleLogout = async () => {
+  try {
+    await axios.post('http://localhost:5000/api/auth/logout');
+    currentUser.value = null;
+    ElMessage.success('Logged out successfully');
+  } catch (error) {
+    console.error('Logout error:', error);
+    ElMessage.error('Failed to logout');
+  }
 };
 </script>
 
@@ -52,7 +71,7 @@ const toggleMenu = () => {
         <div class="search-container">
           <el-input
               v-model="searchQuery"
-              placeholder="Search for movies..."
+              placeholder="Search movies..."
               @keyup.enter="handleSearch"
               class="search-input"
           >
@@ -63,6 +82,31 @@ const toggleMenu = () => {
         </div>
 
         <div class="controls">
+          <!-- 用户认证按钮 -->
+          <template v-if="!currentUser">
+            <el-button type="primary" @click="showAuthDialog = true">
+              <el-icon><user-filled /></el-icon>
+              Login
+            </el-button>
+          </template>
+          <template v-else>
+            <el-dropdown trigger="click">
+              <el-button>
+                {{ currentUser.username }}
+                <el-icon class="el-icon--right"><arrow-down /></el-icon>
+              </el-button>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item>My Ratings</el-dropdown-item>
+                  <el-dropdown-item>Watch Later</el-dropdown-item>
+                  <el-dropdown-item divided @click="handleLogout">
+                    Logout
+                  </el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
+          </template>
+
           <el-button
               circle
               @click="emit('toggle-dark-mode')"
@@ -77,31 +121,41 @@ const toggleMenu = () => {
         <span></span>
       </div>
     </div>
+
+    <!-- 认证对话框 -->
+    <auth-dialog
+      v-model="showAuthDialog"
+      @auth-success="handleAuthSuccess"
+    />
   </header>
 </template>
 
 <style scoped>
 .app-header {
-  background-color: var(--card-bg);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   position: sticky;
   top: 0;
-  z-index: 100;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background-color: var(--bg-color);
+  border-bottom: 1px solid var(--border-color);
+  width: 100%;
 }
 
 .header-container {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 1rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem;
-  max-width: 1280px;
-  margin: 0 auto;
+  gap: 2rem;
 }
 
 .logo-container {
   display: flex;
   align-items: center;
-  min-width: 100px;  /* Ensuring minimum width for the logo container */
+  min-width: 100px; /* Ensuring minimum width for the logo container */
 }
 
 .logo {
@@ -115,7 +169,7 @@ const toggleMenu = () => {
   display: flex;
   align-items: center;
   gap: 2rem;
-  margin-left: 2rem;  /* Adding left margin to create more space */
+  margin-left: 2rem; /* Adding left margin to create more space */
 }
 
 .main-nav ul {
@@ -203,6 +257,16 @@ const toggleMenu = () => {
   }
 
   .search-container {
+    width: 100%;
+  }
+
+  .controls {
+    flex-direction: column;
+    width: 100%;
+    gap: 0.5rem;
+  }
+
+  .controls .el-button {
     width: 100%;
   }
 }
