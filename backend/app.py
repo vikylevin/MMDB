@@ -18,7 +18,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 TMDB_API_KEY = os.getenv('TMDB_API_KEY')
 TMDB_BASE_URL = os.getenv('TMDB_BASE_URL')
-app.secret_key = os.getenv('SECRET_KEY', 'your_default_secret_key')  # 添加密钥配置
+app.secret_key = os.getenv('SECRET_KEY', 'your_default_secret_key')  # Add secret key configuration
 
 print(f"TMDB_API_KEY: {TMDB_API_KEY}")
 print(f"TMDB_BASE_URL: {TMDB_BASE_URL}")
@@ -42,7 +42,7 @@ class Review(db.Model):
     comment = db.Column(db.Text)
     created_at = db.Column(db.DateTime, server_default=db.func.now())
 
-# 用户模型
+# User Model
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
@@ -56,7 +56,7 @@ class User(db.Model):
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
 
-# 用户评分模型
+# User Rating Model
 class UserRating(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
@@ -64,7 +64,7 @@ class UserRating(db.Model):
     rating = db.Column(db.Float, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-# 观看列表模型
+# Watch List Model
 class WatchList(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
@@ -84,7 +84,7 @@ def get_popular_movies():
     try:
         response = requests.get(url, params=params)
         data = response.json()
-        # 限制每页返回18个电影
+        # Limit the number of movies returned per page to 18
         if 'results' in data:
             data['results'] = data['results'][:18]
         return jsonify(data)
@@ -145,7 +145,7 @@ def get_movies_by_category(category):
     print(f"Fetching {category} movies...")
     page = request.args.get('page', 1, type=int)
 
-    # 映射路由参数到TMDB的实际路径
+    # Map route parameters to TMDB's actual paths
     category_mapping = {
         'popular': 'popular',
         'top-rated': 'top_rated',
@@ -167,7 +167,7 @@ def get_movies_by_category(category):
     try:
         response = requests.get(url, params=params)
         data = response.json()
-        # 限制每页返回18个电影
+        # Limit the number of movies returned per page to 18
         if 'results' in data:
             data['results'] = data['results'][:18]
         return jsonify(data)
@@ -175,7 +175,7 @@ def get_movies_by_category(category):
         print(f"Error occurred: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
-# 用户认证相关路由
+# User authentication routes
 @app.route('/api/auth/register', methods=['POST'])
 def register():
     data = request.json
@@ -226,7 +226,7 @@ def get_user():
         'email': user.email
     })
 
-# 用户评分相关路由
+# User rating routes
 @app.route('/api/movies/<int:movie_id>/rate', methods=['POST'])
 def rate_movie(movie_id):
     if 'user_id' not in session:
@@ -251,7 +251,7 @@ def rate_movie(movie_id):
     db.session.commit()
     return jsonify({'message': 'Rating saved successfully'})
 
-# 观看列表相关路由
+# Watchlist routes
 @app.route('/api/watchlist', methods=['GET', 'POST'])
 def watchlist():
     if 'user_id' not in session:
