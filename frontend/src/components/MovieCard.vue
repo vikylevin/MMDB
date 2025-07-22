@@ -9,7 +9,7 @@ const props = defineProps({
     type: Object,
     required: true
   },
-  isAuthenticated: { // 新增：用于判断用户是否已登录
+  isAuthenticated: { // Added: Used to check if the user is logged in
     type: Boolean,
     default: false
   }
@@ -23,7 +23,7 @@ const posterUrl = computed(() => {
   if (props.movie.poster_path) {
     return `https://image.tmdb.org/t/p/w500${props.movie.poster_path}`;
   }
-  // 支持已处理的 poster URL
+  // Support for pre-processed poster URL
   if (props.movie.poster && props.movie.poster.startsWith('http')) {
     return props.movie.poster;
   }
@@ -54,7 +54,7 @@ const handleRating = async (value) => {
     return;
   }
   try {
-    // TODO: 实现评分API调用
+    // TODO: Implement rating API call
     userRating.value = value;
     ElMessage.success('Rating saved successfully');
   } catch (error) {
@@ -69,7 +69,7 @@ const toggleWatchlist = async () => {
     return;
   }
   try {
-    // TODO: 实现添加到观看列表的API调用
+    // TODO: Implement add to watchlist API call
     addedToWatchlist.value = !addedToWatchlist.value;
     ElMessage.success(addedToWatchlist.value ? 'Added to watchlist' : 'Removed from watchlist');
   } catch (error) {
@@ -83,19 +83,19 @@ const toggleWatchlist = async () => {
   <el-card :body-style="{ padding: '0px' }" class="movie-card">
     <div class="poster-container" @click="navigateToDetail">
       <img :src="posterUrl" :alt="movie.title" class="movie-poster" />
-      <!-- TMDB评分保持在右上角 -->
+      <!-- TMDB rating in top right corner -->
       <div class="tmdb-rating">
         <el-icon><star-filled /></el-icon>
-        <span>{{ movie.rating }}</span>
+        <span>{{ rating }}</span>
       </div>
     </div>
     <div class="movie-info">
       <h3 class="movie-title" :title="movie.title">{{ movie.title }}</h3>
       <p class="year">{{ year }}</p>
 
-      <!-- 用户操作区域 -->
+      <!-- User action area -->
       <div class="user-actions">
-        <!-- 用户评分 -->
+        <!-- User rating -->
         <div class="user-rating"
              @mouseenter="showRatingTooltip = true"
              @mouseleave="showRatingTooltip = false">
@@ -108,7 +108,7 @@ const toggleWatchlist = async () => {
           <span v-if="!isAuthenticated" class="login-hint">Login to rate</span>
         </div>
 
-        <!-- Watch Later 按钮 -->
+        <!-- Watch Later button -->
         <el-button
           :type="addedToWatchlist ? 'success' : 'default'"
           size="small"
