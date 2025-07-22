@@ -50,12 +50,12 @@ const fetchMovies = async (page = 1) => {
 
     if (response.data && response.data.results) {
       movies.value = response.data.results.map(movie => ({
+        ...movie,  // 保留原始数据
         id: movie.id,
         title: movie.title,
-        year: movie.release_date ? new Date(movie.release_date).getFullYear() : 'Unknown',
-        poster: movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : '/placeholder.jpg',
-        rating: Math.round(movie.vote_average * 10) / 10,
-        starRating: Math.round((movie.vote_average / 2) * 10) / 10
+        release_date: movie.release_date,
+        poster_path: movie.poster_path,
+        vote_average: movie.vote_average
       }))
 
       totalPages.value = response.data.total_pages
@@ -73,7 +73,7 @@ const handlePageChange = (page) => {
   fetchMovies(page)
 }
 
-// 初始化加载
+// Initialisation loading
 fetchMovies(1)
 </script>
 

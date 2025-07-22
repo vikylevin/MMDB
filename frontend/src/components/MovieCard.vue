@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { StarFilled, Clock } from '@element-plus/icons-vue';
 
@@ -18,6 +18,31 @@ const props = defineProps({
 const userRating = ref(0);
 const showRatingTooltip = ref(false);
 const addedToWatchlist = ref(false);
+const titleRef = ref(null);
+const isTextOverflow = ref(false);
+
+// 监听标题变化和组件挂载，检查文本是否溢出
+const checkTextOverflow = () => {
+  if (titleRef.value && props.movie.title) {
+    // 检查标题长度是否超过17个字符
+    const isTitleLong = props.movie.title.length > 17;
+    // 检查实际显示是否溢出
+    const element = titleRef.value;
+    const isOverflowing = element.scrollWidth > element.clientWidth;
+    // 只有当标题长度超过17个字符且实际显示溢出时才设置为true
+    isTextOverflow.value = isTitleLong && isOverflowing;
+  }
+};
+
+onMounted(() => {
+  checkTextOverflow();
+  // 监听窗口大小变化
+  window.addEventListener('resize', checkTextOverflow);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('resize', checkTextOverflow);
+});
 
 const posterUrl = computed(() => {
   if (props.movie.poster_path) {
@@ -34,14 +59,16 @@ const title = computed(() => props.movie.title);
 const year = computed(() => {
   if (props.movie.year) return props.movie.year;
   if (props.movie.release_date) {
-    return new Date(props.movie.release_date).getFullYear();
+    const date = new Date(props.movie.release_date);
+    const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
   }
-  return 'Unknown';
+  return 'Release date unknown';
 });
 
 const rating = computed(() => {
-  if (props.movie.rating) return props.movie.rating;
-  return Math.round(props.movie.vote_average * 10) / 10;
+  if (props.movie.rating) return props.movie.rating.toFixed(1);
+  return props.movie.vote_average ? Number(props.movie.vote_average).toFixed(1) : '0.0';
 });
 
 const navigateToDetail = () => {
@@ -90,7 +117,12 @@ const toggleWatchlist = async () => {
       </div>
     </div>
     <div class="movie-info">
-      <h3 class="movie-title" :title="movie.title">{{ movie.title }}</h3>
+      <h3 class="movie-title" 
+          :title="movie.title"
+          ref="titleRef"
+          :data-overflow="isTextOverflow">
+          <span>{{ movie.title }}</span>
+      </h3>
       <p class="year">{{ year }}</p>
 
       <!-- User action area -->
@@ -154,7 +186,7 @@ const toggleWatchlist = async () => {
   top: 10px;
   right: 10px;
   background: rgba(0, 0, 0, 0.7);
-  color: #fff;
+  color: #ffffff;
   padding: 4px 8px;
   border-radius: 4px;
   display: flex;
@@ -169,14 +201,45 @@ const toggleWatchlist = async () => {
 .movie-title {
   margin: 0;
   font-size: 1.1em;
+  width: 100%;
   overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* 创建滚动容器 */
+.movie-card:hover .movie-title[data-overflow="true"] {
+  position: relative;
+  overflow: hidden;
+  text-overflow: clip;
+  white-space: nowrap;
+  background: var(--el-bg-color);
+}
+
+/* 创建滚动文本 */
+.movie-card:hover .movie-title[data-overflow="true"] span {
+  display: inline-block;
+  padding-left: 100%;
+  animation: scroll-text 15s linear infinite;
+  white-space: nowrap;
+}
+
+@keyframes scroll-text {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-200%);
+  }
 }
 
 .year {
   color: #666;
   margin: 5px 0;
+  font-size: 0.9em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .user-actions {
