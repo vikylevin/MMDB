@@ -21,22 +21,22 @@ const addedToWatchlist = ref(false);
 const titleRef = ref(null);
 const isTextOverflow = ref(false);
 
-// 监听标题变化和组件挂载，检查文本是否溢出
+// Monitor title changes and component mounting, check for text overflow
 const checkTextOverflow = () => {
   if (titleRef.value && props.movie.title) {
-    // 检查标题长度是否超过17个字符
+    // Check if title length exceeds 17 characters
     const isTitleLong = props.movie.title.length > 17;
-    // 检查实际显示是否溢出
+    // Check if text is actually overflowing
     const element = titleRef.value;
     const isOverflowing = element.scrollWidth > element.clientWidth;
-    // 只有当标题长度超过17个字符且实际显示溢出时才设置为true
+    // Only set to true if title is longer than 17 characters and actually overflowing
     isTextOverflow.value = isTitleLong && isOverflowing;
   }
 };
 
 onMounted(() => {
   checkTextOverflow();
-  // 监听窗口大小变化
+  // Listen for window resize events
   window.addEventListener('resize', checkTextOverflow);
 });
 
@@ -207,7 +207,7 @@ const toggleWatchlist = async () => {
   text-overflow: ellipsis;
 }
 
-/* 创建滚动容器 */
+/* Create scroll container */
 .movie-card:hover .movie-title[data-overflow="true"] {
   position: relative;
   overflow: hidden;
@@ -216,7 +216,7 @@ const toggleWatchlist = async () => {
   background: var(--el-bg-color);
 }
 
-/* 创建滚动文本 */
+/* Create scrolling text */
 .movie-card:hover .movie-title[data-overflow="true"] span {
   display: inline-block;
   padding-left: 100%;

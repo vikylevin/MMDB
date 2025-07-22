@@ -50,7 +50,7 @@ const fetchMovies = async (page = 1) => {
 
     if (response.data && response.data.results) {
       movies.value = response.data.results.map(movie => ({
-        ...movie,  // 保留原始数据
+        ...movie,  // Preserve original data
         id: movie.id,
         title: movie.title,
         release_date: movie.release_date,

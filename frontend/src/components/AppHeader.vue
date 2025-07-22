@@ -82,7 +82,7 @@ const handleLogout = async () => {
         </div>
 
         <div class="controls">
-          <!-- 用户认证按钮 -->
+          <!-- Authentication buttons -->
           <template v-if="!currentUser">
             <el-button type="primary" @click="showAuthDialog = true">
               <el-icon><user-filled /></el-icon>
@@ -122,7 +122,7 @@ const handleLogout = async () => {
       </div>
     </div>
 
-    <!-- 认证对话框 -->
+    <!-- Authentication dialog -->
     <auth-dialog
       v-model="showAuthDialog"
       @auth-success="handleAuthSuccess"
