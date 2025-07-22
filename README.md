@@ -44,7 +44,7 @@ A movie review website built with Vue.js frontend and Flask backend, using TMDB 
    ```
    npm run dev
    ```
-   The frontend should be running at http://localhost:3000
+   The frontend should be running at http://localhost:5173
 
 ## API Configuration
 
