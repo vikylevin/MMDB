@@ -177,9 +177,10 @@ onMounted(() => {
 }
 
 .movie-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 1.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 20px;
   margin-bottom: 2rem;
 }
 

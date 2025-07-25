@@ -166,7 +166,7 @@ const toggleWatchlist = async () => {
   transition: transform 0.3s ease;
   height: 100%;
   max-height: 520px; /* Limit the maximum height of the card */
-  max-width: 270px;  /* Limit the maximum width of the card */
+  width: 220px;  /* Fixed width for all cards */
   margin-left: auto;
   margin-right: auto; /* Center the card in its container */
 }
@@ -177,8 +177,7 @@ const toggleWatchlist = async () => {
 
 .poster-container {
   position: relative;
-  width: 100%;
-  max-width: 220px; /* Limit the maximum width of the poster */
+  width: 220px; /* Fixed width matching the card */
   aspect-ratio: 2/3;
   overflow: hidden;
   cursor: pointer;

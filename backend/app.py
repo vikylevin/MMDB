@@ -302,8 +302,6 @@ def watchlist():
     db.session.commit()
     return jsonify({'message': message})
 
-# 删除原来的 get_popular_movies 路由，因为已经被上面的通用路由替代了
-
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
