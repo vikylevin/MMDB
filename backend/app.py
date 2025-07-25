@@ -78,7 +78,7 @@ def get_popular_movies():
     url = f'{TMDB_BASE_URL}/movie/popular'
     params = {
         'api_key': TMDB_API_KEY,
-        'language': 'en-US',
+        'language': 'en-GB',
         'page': page
     }
     try:
@@ -100,7 +100,7 @@ def search_movies():
         params={
             'api_key': TMDB_API_KEY,
             'query': query,
-            'language': 'en-US'
+            'language': 'en-GB'
         }
     )
     return jsonify(response.json())
@@ -109,7 +109,7 @@ def search_movies():
 def get_movie_details(movie_id):
     response = requests.get(
         f'{TMDB_BASE_URL}/movie/{movie_id}',
-        params={'api_key': TMDB_API_KEY, 'language': 'en-US'}
+        params={'api_key': TMDB_API_KEY, 'language': 'en-GB'}
     )
     return jsonify(response.json())
 
@@ -158,18 +158,39 @@ def get_movies_by_category(category):
 
     tmdb_category = category_mapping[category]
     url = f'{TMDB_BASE_URL}/movie/{tmdb_category}'
+    
+    # Basic params
     params = {
         'api_key': TMDB_API_KEY,
-        'language': 'en-US',
-        'page': page
+        'language': 'en-GB',
+        'page': page,
     }
-
+    
+    # Add region parameter for upcoming movies to get more relevant results
+    if category == 'upcoming':
+        params['region'] = 'GB'  # Use GB (United Kingdom) region for upcoming movies
+        
     try:
         response = requests.get(url, params=params)
         data = response.json()
-        # Limit the number of movies returned per page to 18
+        
         if 'results' in data:
-            data['results'] = data['results'][:18]
+            results = data['results']
+            
+            # For upcoming movies, filter for future releases and sort by date
+            if category == 'upcoming':
+                current_date = datetime.now().strftime('%Y-%m-%d')
+                # Filter movies with release dates after current date
+                results = [
+                    movie for movie in results 
+                    if movie.get('release_date', '') > current_date
+                ]
+                # Sort by release date
+                results = sorted(results, key=lambda x: x.get('release_date', ''))
+            
+            # Limit results per page
+            data['results'] = results[:18]
+            
         return jsonify(data)
     except Exception as e:
         print(f"Error occurred: {str(e)}")

@@ -24,19 +24,29 @@ const categoryTitle = computed(() => {
   return categoryTitles[category.value] || 'Movies';
 });
 
+// Get current page of movies for display
+const displayedMovies = computed(() => {
+  return movies.value;
+});
+
 const fetchMovies = async (page = 1) => {
   try {
     loading.value = true;
     error.value = null;
 
+    // All categories now use the same API endpoint pattern
     let endpoint = `http://127.0.0.1:5000/api/movies/${category.value}`;
     const response = await axios.get(endpoint, {
       params: { page }
     });
 
-    movies.value = response.data.results;
-    totalPages.value = response.data.total_pages;
-    currentPage.value = page;
+    if (response.data && response.data.results) {
+      movies.value = response.data.results;
+      totalPages.value = response.data.total_pages;
+      currentPage.value = page;
+    } else {
+      throw new Error('Invalid response from server');
+    }
   } catch (err) {
     console.error(`Error fetching ${category.value} movies:`, err);
     error.value = `Failed to load movies. Please try again later.`;
@@ -73,7 +83,7 @@ onMounted(() => {
 
     <el-row v-loading="loading" :gutter="20" class="movies-grid">
       <el-col
-        v-for="movie in movies"
+        v-for="movie in displayedMovies"
         :key="movie.id"
         :xs="24"
         :sm="12"

@@ -24,13 +24,10 @@ const isTextOverflow = ref(false);
 // Monitor title changes and component mounting, check for text overflow
 const checkTextOverflow = () => {
   if (titleRef.value && props.movie.title) {
-    // Check if title length exceeds 17 characters
-    const isTitleLong = props.movie.title.length > 17;
-    // Check if text is actually overflowing
+    // Check if text is overflowing its container
     const element = titleRef.value;
     const isOverflowing = element.scrollWidth > element.clientWidth;
-    // Only set to true if title is longer than 17 characters and actually overflowing
-    isTextOverflow.value = isTitleLong && isOverflowing;
+    isTextOverflow.value = isOverflowing;
   }
 };
 
@@ -46,13 +43,14 @@ onUnmounted(() => {
 
 const posterUrl = computed(() => {
   if (props.movie.poster_path) {
-    return `https://image.tmdb.org/t/p/w500${props.movie.poster_path}`;
+    // Try smaller size for better loading performance and availability
+    return `https://image.tmdb.org/t/p/w342${props.movie.poster_path}`;
   }
   // Support for pre-processed poster URL
   if (props.movie.poster && props.movie.poster.startsWith('http')) {
     return props.movie.poster;
   }
-  return '/placeholder-poster.jpg';
+  return ''; // No need for placeholder image as we show title instead
 });
 
 const title = computed(() => props.movie.title);
@@ -109,7 +107,15 @@ const toggleWatchlist = async () => {
 <template>
   <el-card :body-style="{ padding: '0px' }" class="movie-card">
     <div class="poster-container" @click="navigateToDetail">
-      <img :src="posterUrl" :alt="movie.title" class="movie-poster" />
+      <template v-if="props.movie.poster_path">
+        <img :src="posterUrl" :alt="movie.title" class="movie-poster" />
+      </template>
+      <template v-else>
+        <div class="poster-placeholder">
+          <h3>{{ movie.title }}</h3>
+          <p v-if="movie.release_date" class="release-date">{{ new Date(movie.release_date).getFullYear() }}</p>
+        </div>
+      </template>
       <!-- TMDB rating in top right corner -->
       <div class="tmdb-rating">
         <el-icon><star-filled /></el-icon>
@@ -187,6 +193,40 @@ const toggleWatchlist = async () => {
   display: block;
 }
 
+.poster-placeholder {
+  width: 100%;
+  height: 100%;
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 1rem;
+  text-align: center;
+  color: var(--el-text-color-regular);
+  border: 1px solid var(--el-border-color-light);
+}
+
+.poster-placeholder h3 {
+  margin: 0;
+  font-size: 1.2em;
+  font-weight: 500;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--el-text-color-primary);
+}
+
+.poster-placeholder .release-date {
+  margin: 0.5rem 0 0 0;
+  font-size: 0.9em;
+  opacity: 0.8;
+}
+
 .tmdb-rating {
   position: absolute;
   top: 10px;
@@ -225,23 +265,20 @@ const toggleWatchlist = async () => {
 /* Scrolling text animation */
 .movie-card:hover .movie-title[data-overflow="true"] span {
   display: inline-block;
-  padding-left: 100%;
-  animation: scroll-text 10s ease-in-out infinite;
+  animation: scroll-text 8.5s ease-in-out infinite;
   white-space: nowrap;
+  padding-right: 20px; /* Add some space after the text */
 }
 
 @keyframes scroll-text {
-  0% {
+  0%, 15% {
     transform: translateX(0);
   }
-  15% {
+  45%, 70% {
+    transform: translateX(calc(-100% + 15px)); /* Leave a small part visible */
+  }
+  95%, 100% {
     transform: translateX(0);
-  }
-  85% {
-    transform: translateX(-100%);
-  }
-  100% {
-    transform: translateX(-100%);
   }
 }
 
