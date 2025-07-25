@@ -159,6 +159,10 @@ const toggleWatchlist = async () => {
 .movie-card {
   transition: transform 0.3s ease;
   height: 100%;
+  max-height: 520px; /* Limit the maximum height of the card */
+  max-width: 270px;  /* Limit the maximum width of the card */
+  margin-left: auto;
+  margin-right: auto; /* Center the card in its container */
 }
 
 .movie-card:hover {
@@ -168,9 +172,12 @@ const toggleWatchlist = async () => {
 .poster-container {
   position: relative;
   width: 100%;
+  max-width: 220px; /* Limit the maximum width of the poster */
   aspect-ratio: 2/3;
   overflow: hidden;
   cursor: pointer;
+  margin: 0 auto; /* Center the poster in the card */
+  flex: 0 0 auto; /* Prevent poster from being compressed */
 }
 
 .movie-poster {
@@ -206,7 +213,7 @@ const toggleWatchlist = async () => {
   text-overflow: ellipsis;
 }
 
-/* Create scroll container */
+/* Title scroll animation container */
 .movie-card:hover .movie-title[data-overflow="true"] {
   position: relative;
   overflow: hidden;
@@ -215,11 +222,11 @@ const toggleWatchlist = async () => {
   background: var(--el-bg-color);
 }
 
-/* Create scrolling text */
+/* Scrolling text animation */
 .movie-card:hover .movie-title[data-overflow="true"] span {
   display: inline-block;
   padding-left: 100%;
-  animation: scroll-text 15s linear infinite;
+  animation: scroll-text 10s ease-in-out infinite;
   white-space: nowrap;
 }
 
@@ -227,8 +234,14 @@ const toggleWatchlist = async () => {
   0% {
     transform: translateX(0);
   }
+  15% {
+    transform: translateX(0);
+  }
+  85% {
+    transform: translateX(-100%);
+  }
   100% {
-    transform: translateX(-200%);
+    transform: translateX(-100%);
   }
 }
 
