@@ -93,15 +93,42 @@ const fetchTopRatedMovies = async () => {
   }
 }
 
-// Fetch upcoming movies
+// Fetch upcoming movies within next month
 const fetchUpcomingMovies = async () => {
   try {
     loadingUpcoming.value = true
-    const response = await axios.get('http://localhost:5000/api/movies/upcoming', {
-      params: { page: 1, limit: 10 }
-    })
-    if (response.data && response.data.results) {
-      upcomingMovies.value = response.data.results
+    // Fetch 15 pages of upcoming movies (around 300 movies)
+    const pageRequests = Array.from({ length: 15 }, (_, i) => 
+      axios.get('http://localhost:5000/api/movies/upcoming', { params: { page: i + 1 } })
+    )
+    const pages = await Promise.all(pageRequests)
+    
+    // Combine results from all pages
+    const allMovies = pages.reduce((acc, response) => {
+      if (response.data && response.data.results) {
+        return [...acc, ...response.data.results]
+      }
+      return acc
+    }, [])
+    
+    if (allMovies.length > 0) {
+      const today = new Date()
+      const oneMonthLater = new Date(today)
+      oneMonthLater.setMonth(oneMonthLater.getMonth() + 1)
+
+      // Filter movies within the date range and sort by release date
+      const filteredMovies = allMovies
+        .filter(movie => {
+          if (!movie.release_date) return false
+          const releaseDate = new Date(movie.release_date)
+          return releaseDate >= today && releaseDate <= oneMonthLater
+        })
+        .sort((a, b) => new Date(a.release_date) - new Date(b.release_date))
+
+      // Display up to 20 upcoming movies
+      upcomingMovies.value = filteredMovies.length > 20 ? filteredMovies.slice(0, 20) : filteredMovies
+      
+      console.log(`Total movies: ${allMovies.length}, Filtered movies: ${filteredMovies.length}`); // For debugging
     }
   } catch (error) {
     console.error('Error fetching upcoming movies:', error)
