@@ -71,7 +71,7 @@ onMounted(() => {
       </el-col>
     </el-row>
 
-    <el-row v-loading="loading" :gutter="20">
+    <el-row v-loading="loading" :gutter="20" class="movies-grid">
       <el-col
         v-for="movie in movies"
         :key="movie.id"
@@ -126,6 +126,11 @@ onMounted(() => {
 
 :deep(.el-pagination .el-input__inner) {
   text-align: center;
+}
+
+.movies-grid {
+  margin-bottom: 20px;
+  row-gap: 40px !important;
 }
 
 .el-row {

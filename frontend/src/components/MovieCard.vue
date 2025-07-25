@@ -157,7 +157,6 @@ const toggleWatchlist = async () => {
 
 <style scoped>
 .movie-card {
-  margin-bottom: 20px;
   transition: transform 0.3s ease;
   height: 100%;
 }
