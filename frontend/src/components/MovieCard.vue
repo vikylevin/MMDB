@@ -127,7 +127,7 @@ const toggleWatchlist = async () => {
           :title="movie.title"
           ref="titleRef"
           :data-overflow="isTextOverflow">
-          <span>{{ movie.title }}</span>
+          <span :title="movie.title">{{ movie.title }}</span>
       </h3>
       <p class="year">{{ year }}</p>
 
@@ -264,20 +264,22 @@ const toggleWatchlist = async () => {
 /* Scrolling text animation */
 .movie-card:hover .movie-title[data-overflow="true"] span {
   display: inline-block;
-  animation: scroll-text 8.5s ease-in-out infinite;
+  animation: scroll-text 10s linear infinite;
   white-space: nowrap;
-  padding-right: 20px; /* Add some space after the text */
+  padding-right: 50px; /* Space between repeated titles */
+}
+
+.movie-card:hover .movie-title[data-overflow="true"] span::after {
+  content: attr(title);
+  padding-left: 50px; /* Space between repeated titles */
 }
 
 @keyframes scroll-text {
-  0%, 15% {
+  0% {
     transform: translateX(0);
   }
-  45%, 70% {
-    transform: translateX(calc(-100% + 15px)); /* Leave a small part visible */
-  }
-  95%, 100% {
-    transform: translateX(0);
+  100% {
+    transform: translateX(-50%);
   }
 }
 
