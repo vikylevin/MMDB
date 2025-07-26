@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, nextTick } from 'vue';
 import { Search, UserFilled } from '@element-plus/icons-vue';
 import AuthDialog from './AuthDialog.vue';
 
@@ -12,11 +12,27 @@ const searchQuery = ref('');
 const isMenuOpen = ref(false);
 const showAuthDialog = ref(false);
 const currentUser = ref(null);
+const isSearchExpanded = ref(false);
 
 const handleSearch = () => {
   if (searchQuery.value.trim()) {
     // Navigate to search results page with query
     window.location.href = `/search?query=${encodeURIComponent(searchQuery.value)}`;
+    // After searching, collapse the search bar
+    isSearchExpanded.value = false;
+  }
+};
+
+const toggleSearch = () => {
+  isSearchExpanded.value = !isSearchExpanded.value;
+  if (isSearchExpanded.value) {
+    // Focus the input when expanded
+    nextTick(() => {
+      document.querySelector('.search-input input').focus();
+    });
+  } else {
+    // Clear the search query when collapsed
+    searchQuery.value = '';
   }
 };
 
@@ -68,12 +84,20 @@ const handleLogout = async () => {
           </ul>
         </nav>
 
-        <div class="search-container">
+        <div class="search-container" :class="{ 'expanded': isSearchExpanded }">
+          <el-button 
+            circle 
+            class="search-icon" 
+            :icon="Search" 
+            @click="toggleSearch"
+            v-if="!isSearchExpanded"
+          />
           <el-input
-              v-model="searchQuery"
-              placeholder="Search movies..."
-              @keyup.enter="handleSearch"
-              class="search-input"
+            v-show="isSearchExpanded"
+            v-model="searchQuery"
+            placeholder="Search movies..."
+            @keyup.enter="handleSearch"
+            class="search-input"
           >
             <template #append>
               <el-button :icon="Search" @click="handleSearch"/>
@@ -193,11 +217,35 @@ const handleLogout = async () => {
 }
 
 .search-container {
+  position: relative;
+  width: auto;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+}
+
+.search-container.expanded {
   width: 300px;
 }
 
+.search-icon {
+  z-index: 2;
+}
+
 .search-input {
-  transition: width 0.3s;
+  position: absolute;
+  right: 0;
+  width: 100%;
+  opacity: 0;
+  transform: translateX(10px);
+  transition: all 0.3s ease;
+  pointer-events: none;
+}
+
+.search-container.expanded .search-input {
+  opacity: 1;
+  transform: translateX(0);
+  pointer-events: auto;
 }
 
 .controls {
@@ -258,6 +306,15 @@ const handleLogout = async () => {
 
   .search-container {
     width: 100%;
+  }
+
+  .search-container.expanded {
+    width: 100%;
+    margin: 10px 0;
+  }
+
+  .search-icon {
+    margin: 10px 0;
   }
 
   .controls {
