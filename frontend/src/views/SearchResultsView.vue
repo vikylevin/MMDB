@@ -70,18 +70,21 @@ onMounted(() => {
 <template>
   <div class="search-results-view">
     <div class="search-header">
-      <h1>Search Movies</h1>
-      <div class="search-bar">
-        <el-input
-          v-model="searchQuery"
-          placeholder="Search for movies..."
-          @keyup.enter="handleSearch"
-          clearable
-        >
-          <template #append>
-            <el-button :icon="Search" @click="handleSearch" />
-          </template>
-        </el-input>
+      <div class="search-content">
+        <h1>Search Movies</h1>
+        <div class="search-bar">
+          <el-input
+            v-model="searchQuery"
+            placeholder="Search for movies..."
+            @keyup.enter="handleSearch"
+            clearable
+            size="large"
+          >
+            <template #append>
+              <el-button :icon="Search" @click="handleSearch" />
+            </template>
+          </el-input>
+        </div>
       </div>
     </div>
 
@@ -155,25 +158,50 @@ onMounted(() => {
 }
 
 .search-header {
-  margin-bottom: 2rem;
+  margin-bottom: 1rem;
+  min-height: 12vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(to bottom, var(--bg-color), transparent);
+  padding: 0.5rem 0;
+}
+
+.search-content {
+  text-align: center;
+  width: 100%;
+  max-width: 800px;
+  padding: 0.5rem;
 }
 
 .search-header h1 {
-  font-size: 2rem;
+  font-size: 1.8rem;
   font-weight: 600;
   margin-bottom: 1rem;
   color: var(--text-color);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .search-bar {
   max-width: 600px;
+  margin: 0 auto;
+}
+
+.search-bar :deep(.el-input__wrapper) {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.search-bar :deep(.el-input__inner) {
+  font-size: 1.1rem;
+  padding: 12px 20px;
 }
 
 .results-summary {
-  margin-bottom: 1.5rem;
-  font-size: 1.1rem;
+  margin-bottom: 1rem;
+  font-size: 1rem;
   color: var(--text-color);
   opacity: 0.8;
+  padding: 0 1rem;
 }
 
 .movie-grid {
@@ -181,7 +209,7 @@ onMounted(() => {
   flex-wrap: wrap;
   justify-content: center;
   gap: 20px;
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
 }
 
 .movie-skeleton {
@@ -221,12 +249,28 @@ onMounted(() => {
     gap: 1rem;
   }
 
+  .search-header {
+    min-height: 10vh;
+    padding: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .search-content {
+    padding: 0.25rem;
+  }
+
   .search-header h1 {
-    font-size: 1.5rem;
+    font-size: 1.4rem;
+    margin-bottom: 0.75rem;
   }
 
   .search-bar {
     max-width: 100%;
+  }
+
+  .search-bar :deep(.el-input__inner) {
+    font-size: 1rem;
+    padding: 8px 16px;
   }
 }
 </style>
