@@ -1,5 +1,5 @@
 <script setup>
-import { ref, nextTick } from 'vue';
+import { ref, nextTick, onMounted, onUnmounted } from 'vue';
 import { Search, UserFilled } from '@element-plus/icons-vue';
 import AuthDialog from './AuthDialog.vue';
 
@@ -13,6 +13,25 @@ const isMenuOpen = ref(false);
 const showAuthDialog = ref(false);
 const currentUser = ref(null);
 const isSearchExpanded = ref(false);
+
+// Add click outside handler
+const handleClickOutside = (event) => {
+  const searchContainer = document.querySelector('.search-container');
+  if (isSearchExpanded.value && searchContainer && !searchContainer.contains(event.target)) {
+    isSearchExpanded.value = false;
+    searchQuery.value = '';
+  }
+};
+
+// Add event listener when component is mounted
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside);
+});
+
+// Remove event listener when component is unmounted
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside);
+});
 
 const handleSearch = () => {
   if (searchQuery.value.trim()) {
@@ -60,13 +79,13 @@ const handleLogout = async () => {
 <template>
   <header class="app-header">
     <div class="header-container">
-      <div class="logo-container">
-        <router-link to="/" class="logo">
-          <span class="logo-text">MMDb</span>
-        </router-link>
-      </div>
+      <div class="left-section">
+        <div class="logo-container">
+          <router-link to="/" class="logo">
+            <span class="logo-text">MMDb</span>
+          </router-link>
+        </div>
 
-      <div class="nav-container" :class="{ 'menu-open': isMenuOpen }">
         <nav class="main-nav">
           <ul>
             <li>
@@ -83,13 +102,15 @@ const handleLogout = async () => {
             </li>
           </ul>
         </nav>
+      </div>
 
+      <div class="right-section">
         <div class="search-container" :class="{ 'expanded': isSearchExpanded }">
           <el-button 
             circle 
             class="search-icon" 
             :icon="Search" 
-            @click="toggleSearch"
+            @click.stop="toggleSearch"
             v-if="!isSearchExpanded"
           />
           <el-input
@@ -167,13 +188,12 @@ const handleLogout = async () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 2rem;
 }
 
 .logo-container {
   display: flex;
   align-items: center;
-  min-width: 100px; /* Ensuring minimum width for the logo container */
+  min-width: 100px;
 }
 
 .logo {
@@ -183,11 +203,16 @@ const handleLogout = async () => {
   text-decoration: none;
 }
 
-.nav-container {
+.left-section {
   display: flex;
   align-items: center;
   gap: 2rem;
-  margin-left: 2rem; /* Adding left margin to create more space */
+}
+
+.right-section {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
 }
 
 .main-nav ul {

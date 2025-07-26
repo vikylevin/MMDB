@@ -13,8 +13,8 @@ load_dotenv()
 app = Flask(__name__)
 CORS(app)
 
-# Configuration
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
+# Configuration for database and API
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:tele@localhost:5432/movie_db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 TMDB_API_KEY = os.getenv('TMDB_API_KEY')
 TMDB_BASE_URL = os.getenv('TMDB_BASE_URL')
@@ -26,14 +26,14 @@ print(f"TMDB_BASE_URL: {TMDB_BASE_URL}")
 # Initialize database
 db = SQLAlchemy(app)
 
-# Models
+# Database Models
 class Movie(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    tmdb_id = db.Column(db.Integer, unique=True, nullable=False)
-    title = db.Column(db.String(200), nullable=False)
-    overview = db.Column(db.Text)
-    poster_path = db.Column(db.String(200))
-    vote_average = db.Column(db.Float)
+    tmdb_id = db.Column(db.Integer, unique=True, nullable=False)  # Movie ID from TMDB API
+    title = db.Column(db.String(200), nullable=False)  # Movie title
+    overview = db.Column(db.Text)  # Movie description
+    poster_path = db.Column(db.String(200))  # Path to movie poster image
+    vote_average = db.Column(db.Float)  # Average rating from TMDB
     
 class Review(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -42,13 +42,13 @@ class Review(db.Model):
     comment = db.Column(db.Text)
     created_at = db.Column(db.DateTime, server_default=db.func.now())
 
-# User Model
+# User Model for authentication and user management
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(80), unique=True, nullable=False)
-    email = db.Column(db.String(120), unique=True, nullable=False)
-    password_hash = db.Column(db.String(128))
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    username = db.Column(db.String(80), unique=True, nullable=False)  # Unique username
+    email = db.Column(db.String(120), unique=True, nullable=False)  # Unique email address
+    password_hash = db.Column(db.String(128))  # Hashed password for security
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)  # Account creation timestamp
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -56,20 +56,20 @@ class User(db.Model):
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
 
-# User Rating Model
+# User Rating Model for storing user movie ratings
 class UserRating(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    movie_id = db.Column(db.Integer, nullable=False)
-    rating = db.Column(db.Float, nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)  # Reference to user
+    movie_id = db.Column(db.Integer, nullable=False)  # Movie ID being rated
+    rating = db.Column(db.Float, nullable=False)  # User's rating value
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)  # Rating timestamp
 
-# Watch List Model
+# Watch List Model for users to save movies they want to watch
 class WatchList(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    movie_id = db.Column(db.Integer, nullable=False)
-    added_at = db.Column(db.DateTime, default=datetime.utcnow)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)  # Reference to user
+    movie_id = db.Column(db.Integer, nullable=False)  # Movie ID saved to watchlist
+    added_at = db.Column(db.DateTime, default=datetime.utcnow)  # When movie was added to watchlist
 
 @app.route('/api/movies/popular', methods=['GET'])
 def get_popular_movies():
