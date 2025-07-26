@@ -138,12 +138,6 @@ const handleLogout = async () => {
           />
         </div>
       </div>
-
-      <div class="menu-toggle" @click="toggleMenu">
-        <span></span>
-        <span></span>
-        <span></span>
-      </div>
     </div>
 
     <!-- Authentication dialog -->
@@ -254,77 +248,4 @@ const handleLogout = async () => {
   gap: 1rem;
 }
 
-.menu-toggle {
-  display: none;
-  flex-direction: column;
-  justify-content: space-between;
-  width: 30px;
-  height: 21px;
-  cursor: pointer;
-}
-
-.menu-toggle span {
-  display: block;
-  height: 3px;
-  width: 100%;
-  background-color: var(--text-color);
-  border-radius: 3px;
-  transition: all 0.3s;
-}
-
-@media (max-width: 768px) {
-  .menu-toggle {
-    display: flex;
-  }
-
-  .nav-container {
-    position: absolute;
-    top: 70px;
-    left: 0;
-    right: 0;
-    background-color: var(--card-bg);
-    flex-direction: column;
-    padding: 1rem;
-    gap: 1rem;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    transform: translateY(-150%);
-    opacity: 0;
-    transition: all 0.3s;
-    visibility: hidden;
-  }
-
-  .nav-container.menu-open {
-    transform: translateY(0);
-    opacity: 1;
-    visibility: visible;
-  }
-
-  .main-nav ul {
-    flex-direction: column;
-    align-items: center;
-  }
-
-  .search-container {
-    width: 100%;
-  }
-
-  .search-container.expanded {
-    width: 100%;
-    margin: 10px 0;
-  }
-
-  .search-icon {
-    margin: 10px 0;
-  }
-
-  .controls {
-    flex-direction: column;
-    width: 100%;
-    gap: 0.5rem;
-  }
-
-  .controls .el-button {
-    width: 100%;
-  }
-}
 </style>

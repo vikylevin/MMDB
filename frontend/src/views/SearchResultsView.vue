@@ -243,34 +243,4 @@ onMounted(() => {
   opacity: 0.7;
 }
 
-@media (max-width: 768px) {
-  .movie-grid {
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    gap: 1rem;
-  }
-
-  .search-header {
-    min-height: 10vh;
-    padding: 0.5rem;
-    margin-bottom: 0.5rem;
-  }
-
-  .search-content {
-    padding: 0.25rem;
-  }
-
-  .search-header h1 {
-    font-size: 1.4rem;
-    margin-bottom: 0.75rem;
-  }
-
-  .search-bar {
-    max-width: 100%;
-  }
-
-  .search-bar :deep(.el-input__inner) {
-    font-size: 1rem;
-    padding: 8px 16px;
-  }
-}
 </style>

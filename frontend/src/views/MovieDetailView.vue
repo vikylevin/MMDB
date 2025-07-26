@@ -436,19 +436,4 @@ onMounted(() => {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-@media (max-width: 768px) {
-  .movie-detail-header {
-    flex-direction: column;
-  }
-
-  .movie-poster {
-    width: 100%;
-    max-width: 300px;
-    margin: 0 auto 2rem;
-  }
-
-  .movie-info h1 {
-    font-size: 2rem;
-  }
-}
 </style>
