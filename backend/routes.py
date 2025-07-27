@@ -12,24 +12,24 @@ user_bp = Blueprint('user', __name__)
 def register():
     data = request.get_json()
     
-    # 验证必要字段
+    # Validate required fields
     if not all(k in data for k in ['username', 'password', 'email']):
         return jsonify({'error': 'Missing required fields'}), 400
     
-    # 检查用户名和邮箱是否已存在
+    # Check if username and email already exist
     if User.query.filter_by(username=data['username']).first():
         return jsonify({'error': 'Username already exists'}), 400
     if User.query.filter_by(email=data['email']).first():
         return jsonify({'error': 'Email already exists'}), 400
     
-    # 创建新用户
+    # Create new user
     user = User(username=data['username'], email=data['email'])
     user.set_password(data['password'])
     
     db.session.add(user)
     db.session.commit()
     
-    # 生成访问令牌
+    # Generate access token
     access_token = create_access_token(identity=user.id)
     
     return jsonify({
@@ -69,10 +69,10 @@ def toggle_watchlist(movie_id):
     user_id = get_jwt_identity()
     user = User.query.get_or_404(user_id)
     
-    # 查找电影
+    # Find movie
     movie = Movie.query.filter_by(tmdb_id=movie_id).first()
     if not movie:
-        # 如果电影不在数据库中，从TMDB获取并添加
+        # If movie not in database, fetch from TMDB and add it
         movie_data = fetch_movie_details(movie_id)
         if not movie_data:
             return jsonify({'error': 'Movie not found'}), 404
@@ -87,7 +87,7 @@ def toggle_watchlist(movie_id):
         db.session.add(movie)
         db.session.commit()
     
-    # 检查是否已在watchlist中
+    # Check if movie is already in watchlist
     watchlist_item = WatchlistItem.query.filter_by(
         user_id=user_id, movie_id=movie.id
     ).first()
@@ -109,7 +109,7 @@ def get_watchlist():
     user_id = get_jwt_identity()
     user = User.query.get_or_404(user_id)
     
-    # 获取用户的watchlist电影
+    # Get user's watchlist movies
     watchlist_items = WatchlistItem.query.filter_by(user_id=user_id).all()
     movies = []
     

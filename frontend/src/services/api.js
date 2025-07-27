@@ -2,7 +2,7 @@ import axios from 'axios';
 
 const API_URL = 'http://localhost:5000/api';
 
-// 创建axios实例
+// Create axios instance with base configuration
 const api = axios.create({
   baseURL: API_URL,
   timeout: 10000,
@@ -11,7 +11,7 @@ const api = axios.create({
   }
 });
 
-// 请求拦截器：添加token
+// Request interceptor: Add authorization token
 api.interceptors.request.use(config => {
   const token = localStorage.getItem('access_token');
   if (token) {
@@ -20,7 +20,7 @@ api.interceptors.request.use(config => {
   return config;
 });
 
-// 响应拦截器：处理token过期
+// Response interceptor: Handle token expiration
 api.interceptors.response.use(
   response => response,
   error => {
@@ -82,12 +82,12 @@ export const getMovieRating = async (movieId) => {
   return response.data;
 };
 
-// 检查用户是否已登录
+// Check if user is authenticated
 export const isAuthenticated = () => {
   return !!localStorage.getItem('access_token');
 };
 
-// 获取当前用户信息
+// Get current user information
 export const getCurrentUser = () => {
   const userStr = localStorage.getItem('user');
   return userStr ? JSON.parse(userStr) : null;

@@ -9,7 +9,7 @@ TMDB_API_KEY = os.getenv('TMDB_API_KEY')
 TMDB_BASE_URL = 'https://api.themoviedb.org/3'
 
 def fetch_movie_details(movie_id):
-    """从TMDB API获取电影详情"""
+    """Get movie details from TMDB API"""
     try:
         response = requests.get(
             f'{TMDB_BASE_URL}/movie/{movie_id}',
@@ -25,7 +25,7 @@ def fetch_movie_details(movie_id):
         return None
 
 def search_movies(query, page=1):
-    """搜索电影"""
+    """Search for movies"""
     try:
         response = requests.get(
             f'{TMDB_BASE_URL}/search/movie',
@@ -44,7 +44,7 @@ def search_movies(query, page=1):
         return None
 
 def get_popular_movies(page=1):
-    """获取热门电影列表"""
+    """Get popular movies list"""
     try:
         response = requests.get(
             f'{TMDB_BASE_URL}/movie/popular',
