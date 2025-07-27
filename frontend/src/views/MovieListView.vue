@@ -87,9 +87,9 @@ onMounted(() => {
         :key="movie.id"
         :xs="24"
         :sm="12"
-        :md="8"
-        :lg="6"
-        :xl="4"
+        :md="6"
+        :lg="4.8"
+        :span="4.8"
       >
         <MovieCard :movie="movie" />
       </el-col>
@@ -99,8 +99,8 @@ onMounted(() => {
       <el-pagination
         v-if="totalPages > 1"
         :current-page="currentPage"
-        :page-size="18"
-        :total="totalPages * 18"
+        :page-size="20"
+        :total="totalPages * 20"
         @current-change="handlePageChange"
         layout="prev, pager, next, jumper"
         :pager-count="7"
@@ -140,11 +140,16 @@ onMounted(() => {
 
 .movies-grid {
   margin-bottom: 20px;
-  row-gap: 40px !important;
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
+  justify-content: start;
   gap: 20px;
+  width: 100%;
+}
+
+.movies-grid .el-col {
+  flex: 0 0 calc(20% - 16px);
+  max-width: calc(20% - 16px);
 }
 
 .el-row {

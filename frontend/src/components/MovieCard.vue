@@ -2,6 +2,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { StarFilled, Clock } from '@element-plus/icons-vue';
+import { ElMessage } from 'element-plus';
 
 const router = useRouter();
 const props = defineProps({
@@ -75,16 +76,45 @@ const navigateToDetail = () => {
 
 const handleRating = async (value) => {
   if (!props.isAuthenticated) {
-    ElMessage.warning('Please login to rate movies');
+    userRating.value = 0; // Reset rating if not authenticated
+    ElMessage({
+      message: 'Please login to rate movies',
+      type: 'warning',
+      duration: 2000,
+      showClose: true
+    });
     return;
   }
+  
   try {
     // TODO: Implement rating API call
-    userRating.value = value;
-    ElMessage.success('Rating saved successfully');
+    const response = await fetch(`/api/movies/${props.movie.id}/rate`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ rating: value })
+    });
+
+    if (response.ok) {
+      userRating.value = value;
+      ElMessage({
+        message: 'Rating saved successfully',
+        type: 'success',
+        duration: 2000
+      });
+    } else {
+      throw new Error('Failed to save rating');
+    }
   } catch (error) {
     console.error('Error saving rating:', error);
-    ElMessage.error('Failed to save rating');
+    userRating.value = 0; // Reset rating on error
+    ElMessage({
+      message: 'Failed to save rating',
+      type: 'error',
+      duration: 2000,
+      showClose: true
+    });
   }
 }
 
@@ -134,16 +164,15 @@ const toggleWatchlist = async () => {
       <!-- User action area -->
       <div class="user-actions">
         <!-- User rating -->
-        <div class="user-rating"
-             @mouseenter="showRatingTooltip = true"
-             @mouseleave="showRatingTooltip = false">
+        <div class="user-rating">
           <el-rate
             v-model="userRating"
-            :disabled="!isAuthenticated"
+            :disabled="false"
+            :allow-half="false"
             @change="handleRating"
             text-color="#ff9900"
+            void-color="#C6D1DE"
           />
-          <span v-if="!isAuthenticated" class="login-hint">Login to rate</span>
         </div>
 
         <!-- Watch Later button -->
@@ -302,7 +331,10 @@ const toggleWatchlist = async () => {
 .user-rating {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
+  width: 100%;
+  padding: 5px 0;
 }
 
 .login-hint {
@@ -321,10 +353,30 @@ const toggleWatchlist = async () => {
 :deep(.el-rate) {
   display: inline-flex;
   line-height: 1;
+  transition: all 0.3s ease;
+  justify-content: center;
+}
+
+:deep(.el-rate:hover) {
+  transform: scale(1.05);
 }
 
 :deep(.el-rate__icon) {
-  font-size: 16px;
-  margin-right: 4px;
+  font-size: 22px;
+  margin-right: 6px;
+  transition: all 0.2s ease;
+}
+
+:deep(.el-rate__icon--on) {
+  color: #ff9900;
+  transform: scale(1.1);
+}
+
+:deep(.el-rate__decimal) {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: inline-block;
+  overflow: hidden;
 }
 </style>

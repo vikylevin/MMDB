@@ -1,18 +1,22 @@
 <script setup>
-import { ref, nextTick, onMounted, onUnmounted } from 'vue';
-import { Search, UserFilled } from '@element-plus/icons-vue';
-import AuthDialog from './AuthDialog.vue';
+import { ref, nextTick, onMounted, onUnmounted, computed } from 'vue';
+import { Search, User } from '@element-plus/icons-vue';
+import { useRouter } from 'vue-router';
 
 defineProps({
   darkMode: Boolean
 });
 
+const router = useRouter();
 const emit = defineEmits(['toggle-dark-mode']);
 const searchQuery = ref('');
 const isMenuOpen = ref(false);
-const showAuthDialog = ref(false);
-const currentUser = ref(null);
 const isSearchExpanded = ref(false);
+
+const user = computed(() => {
+  const userStr = localStorage.getItem('user');
+  return userStr ? JSON.parse(userStr) : null;
+});
 
 // Add click outside handler
 const handleClickOutside = (event) => {
@@ -59,20 +63,13 @@ const toggleMenu = () => {
   isMenuOpen.value = !isMenuOpen.value;
 };
 
-const handleAuthSuccess = (user) => {
-  currentUser.value = user;
-  showAuthDialog.value = false;
+const handleLogin = () => {
+  router.push('/login');
 };
 
-const handleLogout = async () => {
-  try {
-    await axios.post('http://localhost:5000/api/auth/logout');
-    currentUser.value = null;
-    ElMessage.success('Logged out successfully');
-  } catch (error) {
-    console.error('Logout error:', error);
-    ElMessage.error('Failed to logout');
-  }
+const handleLogout = () => {
+  localStorage.removeItem('user');
+  router.push('/login');
 };
 </script>
 
@@ -99,6 +96,31 @@ const handleLogout = async () => {
             </li>
             <li>
               <router-link to="/movies/upcoming">Upcoming</router-link>
+            </li>
+            <li class="user-menu">
+              <template v-if="user">
+                <el-dropdown trigger="click">
+                  <el-avatar :size="32" :src="user.avatar">
+                    {{ user.username?.charAt(0).toUpperCase() }}
+                  </el-avatar>
+                  
+                  <template #dropdown>
+                    <el-dropdown-menu>
+                      <el-dropdown-item @click="router.push('/profile')">
+                        Profile
+                      </el-dropdown-item>
+                      <el-dropdown-item @click="handleLogout">
+                        Logout
+                      </el-dropdown-item>
+                    </el-dropdown-menu>
+                  </template>
+                </el-dropdown>
+              </template>
+              <template v-else>
+                <el-button type="primary" @click="handleLogin" :icon="User">
+                  Login
+                </el-button>
+              </template>
             </li>
           </ul>
         </nav>
@@ -127,31 +149,6 @@ const handleLogout = async () => {
         </div>
 
         <div class="controls">
-          <!-- Authentication buttons -->
-          <template v-if="!currentUser">
-            <el-button type="primary" @click="showAuthDialog = true">
-              <el-icon><user-filled /></el-icon>
-              Login
-            </el-button>
-          </template>
-          <template v-else>
-            <el-dropdown trigger="click">
-              <el-button>
-                {{ currentUser.username }}
-                <el-icon class="el-icon--right"><arrow-down /></el-icon>
-              </el-button>
-              <template #dropdown>
-                <el-dropdown-menu>
-                  <el-dropdown-item>My Ratings</el-dropdown-item>
-                  <el-dropdown-item>Watch Later</el-dropdown-item>
-                  <el-dropdown-item divided @click="handleLogout">
-                    Logout
-                  </el-dropdown-item>
-                </el-dropdown-menu>
-              </template>
-            </el-dropdown>
-          </template>
-
           <el-button
               circle
               @click="emit('toggle-dark-mode')"
@@ -160,12 +157,6 @@ const handleLogout = async () => {
         </div>
       </div>
     </div>
-
-    <!-- Authentication dialog -->
-    <auth-dialog
-      v-model="showAuthDialog"
-      @auth-success="handleAuthSuccess"
-    />
   </header>
 </template>
 
@@ -271,6 +262,26 @@ const handleLogout = async () => {
   display: flex;
   align-items: center;
   gap: 1rem;
+}
+
+.user-menu {
+  display: flex;
+  align-items: center;
+  margin-left: 1rem;
+}
+
+:deep(.el-avatar) {
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+:deep(.el-avatar:hover) {
+  transform: scale(1.1);
+}
+
+:deep(.el-button) {
+  height: 32px;
+  padding: 0 16px;
 }
 
 </style>
