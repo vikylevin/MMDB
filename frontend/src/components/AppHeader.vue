@@ -97,31 +97,6 @@ const handleLogout = () => {
             <li>
               <router-link to="/movies/upcoming">Upcoming</router-link>
             </li>
-            <li class="user-menu">
-              <template v-if="user">
-                <el-dropdown trigger="click">
-                  <el-avatar :size="32" :src="user.avatar">
-                    {{ user.username?.charAt(0).toUpperCase() }}
-                  </el-avatar>
-                  
-                  <template #dropdown>
-                    <el-dropdown-menu>
-                      <el-dropdown-item @click="router.push('/profile')">
-                        Profile
-                      </el-dropdown-item>
-                      <el-dropdown-item @click="handleLogout">
-                        Logout
-                      </el-dropdown-item>
-                    </el-dropdown-menu>
-                  </template>
-                </el-dropdown>
-              </template>
-              <template v-else>
-                <el-button type="primary" @click="handleLogin" :icon="User">
-                  Login
-                </el-button>
-              </template>
-            </li>
           </ul>
         </nav>
       </div>
@@ -154,6 +129,31 @@ const handleLogout = () => {
               @click="emit('toggle-dark-mode')"
               :icon="darkMode ? 'Sunny' : 'Moon'"
           />
+          <div class="user-menu">
+            <template v-if="user">
+              <el-dropdown trigger="click">
+                <el-avatar :size="32" :src="user.avatar" class="user-avatar">
+                  {{ user.username?.charAt(0).toUpperCase() }}
+                </el-avatar>
+                
+                <template #dropdown>
+                  <el-dropdown-menu>
+                    <el-dropdown-item @click="router.push('/profile')">
+                      Profile
+                    </el-dropdown-item>
+                    <el-dropdown-item @click="handleLogout">
+                      Logout
+                    </el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
+            </template>
+            <template v-else>
+              <el-button type="primary" @click="handleLogin" :icon="User">
+                Login
+              </el-button>
+            </template>
+          </div>
         </div>
       </div>
     </div>
@@ -170,12 +170,18 @@ const handleLogout = () => {
   background-color: var(--bg-color);
   border-bottom: 1px solid var(--border-color);
   width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 32px;
+  height: 64px;
 }
 
 .header-container {
+  width: 100%;
   max-width: 1440px;
   margin: 0 auto;
-  padding: 1rem;
+  padding: 1rem 2rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -198,12 +204,17 @@ const handleLogout = () => {
   display: flex;
   align-items: center;
   gap: 2rem;
+  flex: 1;
+  max-width: 600px;
 }
 
 .right-section {
   display: flex;
   align-items: center;
-  gap: 2rem;
+  gap: 1rem;
+  margin-left: auto;
+  min-width: 200px;
+  justify-content: flex-end;
 }
 
 .main-nav ul {
@@ -267,7 +278,10 @@ const handleLogout = () => {
 .user-menu {
   display: flex;
   align-items: center;
-  margin-left: 1rem;
+}
+
+.user-avatar {
+  cursor: pointer;
 }
 
 :deep(.el-avatar) {
@@ -283,5 +297,4 @@ const handleLogout = () => {
   height: 32px;
   padding: 0 16px;
 }
-
 </style>

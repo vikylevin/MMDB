@@ -44,7 +44,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 
@@ -63,6 +63,22 @@ const registerForm = ref({
   password: ''
 })
 const confirmPassword = ref('')
+
+// Auto-clear localStorage after 1 hour
+onMounted(() => {
+  const loginTime = localStorage.getItem('login_time')
+  if (loginTime) {
+    const now = Date.now()
+    const diff = now - parseInt(loginTime, 10)
+    if (diff > 3600000) { // 1 hour in ms
+      localStorage.removeItem('token')
+      localStorage.removeItem('user')
+      localStorage.removeItem('login_time')
+      ElMessage.info('Session expired, please login again')
+      router.push('/login')
+    }
+  }
+})
 
 const handleLogin = async () => {
   if (!loginForm.value.username || !loginForm.value.password) {
@@ -84,6 +100,7 @@ const handleLogin = async () => {
       const data = await response.json()
       localStorage.setItem('token', data.token)
       localStorage.setItem('user', JSON.stringify(data.user))
+      localStorage.setItem('login_time', Date.now().toString())
       ElMessage.success('Login successful')
       router.push('/')
     } else {
@@ -129,6 +146,7 @@ const handleRegister = async () => {
         password: ''
       }
       confirmPassword.value = ''
+      localStorage.setItem('login_time', Date.now().toString())
     } else {
       const data = await response.json()
       throw new Error(data.message || 'Registration failed')
