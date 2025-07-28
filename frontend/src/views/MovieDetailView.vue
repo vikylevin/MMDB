@@ -2,6 +2,7 @@
 import { ref, onMounted, computed } from 'vue';
 import { useRoute } from 'vue-router';
 import axios from 'axios';
+import { ElMessage } from 'element-plus';
 import { Star, StarFilled, Clock, Calendar, MessageBox } from '@element-plus/icons-vue';
 
 const route = useRoute();
@@ -18,9 +19,45 @@ const userReview = ref({
 });
 const reviewSubmitting = ref(false);
 const showReviewForm = ref(false);
+const isInWatchlist = ref(false);
 
 const imageBaseUrl = 'https://image.tmdb.org/t/p/original';
 const posterBaseUrl = 'https://image.tmdb.org/t/p/w500';
+
+const checkWatchlistStatus = async () => {
+  const token = localStorage.getItem('token');
+  if (!token) return;
+  
+  try {
+    const response = await axios.get(`http://127.0.0.1:5000/api/watchlist/check/${movieId.value}`, {
+      headers: { 'X-Access-Token': token }
+    });
+    isInWatchlist.value = response.data.in_watchlist;
+  } catch (err) {
+    console.error('Error checking watchlist status:', err);
+  }
+};
+
+const toggleWatchlist = async () => {
+  const token = localStorage.getItem('token');
+  if (!token) {
+    ElMessage.warning('Please log in to add movies to your watchlist');
+    return;
+  }
+
+  try {
+    const url = `http://127.0.0.1:5000/api/watchlist/${isInWatchlist.value ? 'remove' : 'add'}/${movieId.value}`;
+    await axios.post(url, {}, {
+      headers: { 'X-Access-Token': token }
+    });
+    
+    isInWatchlist.value = !isInWatchlist.value;
+    ElMessage.success(`Movie ${isInWatchlist.value ? 'added to' : 'removed from'} watchlist`);
+  } catch (err) {
+    console.error('Error updating watchlist:', err);
+    ElMessage.error('Failed to update watchlist. Please try again later.');
+  }
+};
 
 const fetchMovieDetails = async () => {
   try {
@@ -34,6 +71,7 @@ const fetchMovieDetails = async () => {
 
     movie.value = movieRes.data;
     reviews.value = reviewsRes.data.results || [];
+    await checkWatchlistStatus();
   } catch (err) {
     console.error('Error fetching movie details:', err);
     error.value = 'Failed to load movie details. Please try again later.';
@@ -181,6 +219,10 @@ onMounted(() => {
                 <el-button type="primary" @click="showReviewForm = true">
                   <el-icon><message-box /></el-icon>
                   Write a Review
+                </el-button>
+                <el-button @click="toggleWatchlist" :type="isInWatchlist ? 'danger' : 'success'">
+                  <el-icon><star-filled /></el-icon>
+                  {{ isInWatchlist ? 'Remove from Watchlist' : 'Add to Watchlist' }}
                 </el-button>
               </div>
             </div>

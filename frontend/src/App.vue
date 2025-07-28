@@ -1,13 +1,21 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import AppHeader from './components/AppHeader.vue';
 import AppFooter from './components/AppFooter.vue';
 
-const isDarkMode = ref(false);
+// Get theme preference from localStorage
+const isDarkMode = ref(localStorage.getItem('theme') === 'dark');
+
+onMounted(() => {
+  // Initialize theme
+  document.body.classList.toggle('dark-mode', isDarkMode.value);
+});
 
 const toggleDarkMode = () => {
   isDarkMode.value = !isDarkMode.value;
   document.body.classList.toggle('dark-mode', isDarkMode.value);
+  // Save user's theme preference
+  localStorage.setItem('theme', isDarkMode.value ? 'dark' : 'light');
 };
 </script>
 
@@ -32,6 +40,16 @@ const toggleDarkMode = () => {
   --border-color: #eaeaea;
   --container-width: 1440px;
   --content-width: 1400px;
+}
+
+/* Dark mode variables */
+.dark-mode {
+  --primary-color: #34495e;
+  --secondary-color: #42b883;
+  --text-color: #ffffff;
+  --bg-color: #1a1a1a;
+  --card-bg: #2c2c2c;
+  --border-color: #3a3a3a;
 }
 
 /* Base Styles */

@@ -3,16 +3,13 @@ import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { StarFilled, Clock } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
+import { isAuthenticated, toggleWatchlist } from '../services/api';
 
 const router = useRouter();
 const props = defineProps({
   movie: {
     type: Object,
     required: true
-  },
-  isAuthenticated: { // Added: Used to check if the user is logged in
-    type: Boolean,
-    default: false
   }
 });
 
@@ -75,7 +72,7 @@ const navigateToDetail = () => {
 }
 
 const handleRating = async (value) => {
-  if (!props.isAuthenticated) {
+  if (!isAuthenticated()) {
     userRating.value = 0; // Reset rating if not authenticated
     ElMessage({
       message: 'Please login to rate movies',
@@ -118,15 +115,24 @@ const handleRating = async (value) => {
   }
 }
 
-const toggleWatchlist = async () => {
-  if (!props.isAuthenticated) {
+const handleToggleWatchlist = async () => {
+  if (!isAuthenticated()) {
     ElMessage.warning('Please login to add movies to your watchlist');
     return;
   }
   try {
-    // TODO: Implement add to watchlist API call
-    addedToWatchlist.value = !addedToWatchlist.value;
-    ElMessage.success(addedToWatchlist.value ? 'Added to watchlist' : 'Removed from watchlist');
+    const movieId = Number(props.movie.tmdb_id || props.movie.id);
+    if (!movieId || isNaN(movieId)) {
+      ElMessage.error('Invalid movie id');
+      return;
+    }
+    const response = await toggleWatchlist(movieId);
+    addedToWatchlist.value = response.added;
+    if (response.added) {
+      ElMessage.success('Added to watchlist');
+    } else {
+      ElMessage.success('Removed from watchlist');
+    }
   } catch (error) {
     console.error('Error updating watchlist:', error);
     ElMessage.error('Failed to update watchlist');
@@ -179,7 +185,7 @@ const toggleWatchlist = async () => {
         <el-button
           :type="addedToWatchlist ? 'success' : 'default'"
           size="small"
-          @click="toggleWatchlist"
+          @click="handleToggleWatchlist"
           class="watchlist-btn"
         >
           <el-icon><Clock /></el-icon>

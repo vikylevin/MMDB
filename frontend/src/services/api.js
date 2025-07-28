@@ -36,18 +36,22 @@ api.interceptors.response.use(
 // Auth APIs
 export const login = async (username, password) => {
   const response = await api.post('/auth/login', { username, password });
-  const { access_token, user } = response.data;
-  localStorage.setItem('access_token', access_token);
+  const { token, user } = response.data;
+  localStorage.setItem('access_token', token);
   localStorage.setItem('user', JSON.stringify(user));
   return user;
 };
 
 export const register = async (username, email, password) => {
   const response = await api.post('/auth/register', { username, email, password });
-  const { access_token, user } = response.data;
-  localStorage.setItem('access_token', access_token);
-  localStorage.setItem('user', JSON.stringify(user));
-  return user;
+  // If registration is successful, automatically log in
+  if (response.data && response.data.message === 'User registered successfully') {
+    // Call login API to get token and user info
+    return await login(username, password);
+  } else {
+    // Registration failed, return error
+    throw new Error(response.data?.error || 'Registration failed');
+  }
 };
 
 export const logout = () => {
@@ -62,14 +66,28 @@ export const getProfile = async () => {
 };
 
 export const getWatchlist = async () => {
-  const response = await api.get('/user/watchlist');
+  const response = await api.get('/watchlist');
   return response.data;
 };
 
 // Movie APIs
 export const toggleWatchlist = async (movieId) => {
-  const response = await api.post(`/movies/${movieId}/watchlist`);
-  return response.data;
+  // 参数校验，确保 movieId 为有效数字
+  const id = Number(movieId);
+  if (!id || isNaN(id)) {
+    throw new Error('Invalid movie id');
+  }
+  // 先检查是否已在 watchlist
+  const check = await api.get(`/watchlist/check/${id}`);
+  if (check.data.in_watchlist) {
+    // 已在 watchlist，移除
+    const response = await api.post(`/watchlist/remove/${id}`);
+    return { added: false, ...response.data };
+  } else {
+    // 不在 watchlist，添加
+    const response = await api.post(`/watchlist/add/${id}`);
+    return { added: true, ...response.data };
+  }
 };
 
 export const rateMovie = async (movieId, rating) => {

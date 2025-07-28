@@ -45,6 +45,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import api from '@/utils/api'
 
 const router = useRouter()
 const user = ref(null)
@@ -62,20 +63,11 @@ onMounted(() => {
 
 const fetchFavorites = async () => {
   try {
-    const response = await fetch('http://localhost:5000/api/user/favorites', {
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
-      }
-    })
-
-    if (response.ok) {
-      favorites.value = await response.json()
-    } else {
-      throw new Error('Failed to fetch favorites')
-    }
+    const response = await api.get('/user/favorites');
+    favorites.value = response.data;
   } catch (error) {
-    console.error('Error fetching favorites:', error)
-    ElMessage.error('Failed to load favorite movies')
+    console.error('Error fetching favorites:', error);
+    ElMessage.error('Failed to load favorite movies. ' + (error.response?.data?.message || ''));
   }
 }
 

@@ -47,6 +47,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { login, register } from '../services/api'
 
 const router = useRouter()
 const mode = ref('login')
@@ -85,30 +86,14 @@ const handleLogin = async () => {
     ElMessage.warning('Please enter username and password')
     return
   }
-
   loading.value = true
   try {
-    const response = await fetch('http://localhost:5000/api/auth/login', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(loginForm.value)
-    })
-
-    if (response.ok) {
-      const data = await response.json()
-      localStorage.setItem('token', data.token)
-      localStorage.setItem('user', JSON.stringify(data.user))
-      localStorage.setItem('login_time', Date.now().toString())
-      ElMessage.success('Login successful')
-      router.push('/')
-    } else {
-      throw new Error('Login failed')
-    }
+    await login(loginForm.value.username, loginForm.value.password)
+    localStorage.setItem('login_time', Date.now().toString())
+    ElMessage.success('Login successful')
+    router.push('/')
   } catch (error) {
-    console.error('Login error:', error)
-    ElMessage.error('Login failed. Please check your credentials')
+    ElMessage.error('Login failed')
   } finally {
     loading.value = false
   }

@@ -1,5 +1,5 @@
 <script setup>
-import { ref, nextTick, onMounted, onUnmounted, computed } from 'vue';
+import { ref, nextTick, onMounted, onUnmounted } from 'vue';
 import { Search, User } from '@element-plus/icons-vue';
 import { useRouter } from 'vue-router';
 
@@ -13,10 +13,7 @@ const searchQuery = ref('');
 const isMenuOpen = ref(false);
 const isSearchExpanded = ref(false);
 
-const user = computed(() => {
-  const userStr = localStorage.getItem('user');
-  return userStr ? JSON.parse(userStr) : null;
-});
+const user = ref(null);
 
 // Add click outside handler
 const handleClickOutside = (event) => {
@@ -27,14 +24,28 @@ const handleClickOutside = (event) => {
   }
 };
 
-// Add event listener when component is mounted
+// Add event listeners when component is mounted
 onMounted(() => {
   document.addEventListener('click', handleClickOutside);
+  // Initial check
+  updateUserState();
+  // Check periodically
+  const interval = setInterval(updateUserState, 1000);
+  // Add storage change listener
+  window.addEventListener('storage', updateUserState);
+  
+  // Clean up interval on unmount
+  onUnmounted(() => {
+    clearInterval(interval);
+  });
 });
 
-// Remove event listener when component is unmounted
+// Remove event listeners when component is unmounted
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside);
+  window.removeEventListener('storage', () => {
+    user.value = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')) : null;
+  });
 });
 
 const handleSearch = () => {
@@ -63,12 +74,25 @@ const toggleMenu = () => {
   isMenuOpen.value = !isMenuOpen.value;
 };
 
+const updateUserState = () => {
+  const userStr = localStorage.getItem('user');
+  const token = localStorage.getItem('access_token');
+  if (userStr && token) {
+    user.value = JSON.parse(userStr);
+  } else {
+    user.value = null;
+  }
+};
+
 const handleLogin = () => {
   router.push('/login');
 };
 
 const handleLogout = () => {
   localStorage.removeItem('user');
+  localStorage.removeItem('access_token');
+  localStorage.removeItem('login_time');
+  updateUserState();
   router.push('/login');
 };
 </script>
@@ -298,3 +322,4 @@ const handleLogout = () => {
   padding: 0 16px;
 }
 </style>
+Please login to add movies to your watchlist

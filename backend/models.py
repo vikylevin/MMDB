@@ -13,7 +13,7 @@ class Movie(db.Model):
     
     # Relationships
     ratings = db.relationship('Rating', backref='movie', lazy=True)
-    watchlist_users = db.relationship('WatchlistItem', backref='movie', lazy=True)
+    # Removed WatchlistItem relationship, as WatchlistItem uses TMDB id only
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -46,7 +46,7 @@ class Rating(db.Model):
 class WatchlistItem(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    movie_id = db.Column(db.Integer, db.ForeignKey('movie.id'), nullable=False)
+    movie_id = db.Column(db.Integer, nullable=False)  # TMDB id, no ForeignKey
     added_at = db.Column(db.DateTime, server_default=db.func.now())
 
     __table_args__ = (
