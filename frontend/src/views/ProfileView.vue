@@ -13,23 +13,45 @@
           <p><strong>Member since:</strong> {{ formatDate(user.created_at) }}</p>
         </div>
 
-        <div class="favorite-movies" v-if="favorites.length">
-          <h3>Favorite Movies</h3>
-          <el-row :gutter="20">
-            <el-col :span="8" v-for="movie in favorites" :key="movie.id">
-              <el-card :body-style="{ padding: '0px' }" class="movie-card">
-                <img :src="movie.poster_path" class="movie-poster" />
-                <div class="movie-info">
-                  <h4>{{ movie.title }}</h4>
-                  <el-button type="text" @click="viewMovie(movie.id)">View Details</el-button>
-                </div>
-              </el-card>
-            </el-col>
-          </el-row>
-        </div>
-        <div v-else class="no-favorites">
-          <p>No favorite movies yet</p>
-          <el-button type="primary" @click="$router.push('/')">Browse Movies</el-button>
+        <div class="profile-modules">
+          <!-- Watch Later List -->
+          <div class="watchlist-section" v-if="watchlist.length">
+            <h3>Watch Later</h3>
+            <el-row :gutter="20">
+              <el-col :span="8" v-for="movie in watchlist" :key="movie.id">
+                <ProfileMovieCard :movie="movie" />
+              </el-col>
+            </el-row>
+          </div>
+          <div v-else class="no-favorites">
+            <p>No movies in Watch Later</p>
+          </div>
+
+          <!-- Favorites List -->
+          <div class="favorite-section" v-if="favorites.length">
+            <h3>Like</h3>
+            <el-row :gutter="20">
+              <el-col :span="8" v-for="movie in favorites" :key="movie.id">
+                <ProfileMovieCard :movie="movie" />
+              </el-col>
+            </el-row>
+          </div>
+          <div v-else class="no-favorites">
+            <p>No liked movies yet</p>
+          </div>
+
+          <!-- Watched List -->
+          <div class="watched-section" v-if="watched.length">
+            <h3>Watched</h3>
+            <el-row :gutter="20">
+              <el-col :span="8" v-for="movie in watched" :key="movie.id">
+                <ProfileMovieCard :movie="movie" />
+              </el-col>
+            </el-row>
+          </div>
+          <div v-else class="no-favorites">
+            <p>No watched movies yet</p>
+          </div>
         </div>
       </div>
 
@@ -41,33 +63,56 @@
   </div>
 </template>
 
+
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import api from '@/utils/api'
+import * as api from '@/services/api'
+import ProfileMovieCard from '@/components/ProfileMovieCard.vue'
 
 const router = useRouter()
 const user = ref(null)
 const favorites = ref([])
+const watchlist = ref([])
+const watched = ref([])
 
 onMounted(() => {
   const storedUser = localStorage.getItem('user')
-  const token = localStorage.getItem('token')
+  const token = localStorage.getItem('access_token')
 
   if (storedUser && token) {
     user.value = JSON.parse(storedUser)
     fetchFavorites()
+    fetchWatchlist()
+    fetchWatched()
   }
 })
 
 const fetchFavorites = async () => {
   try {
-    const response = await api.get('/user/favorites');
-    favorites.value = response.data;
+    favorites.value = await api.getFavorites();
   } catch (error) {
     console.error('Error fetching favorites:', error);
-    ElMessage.error('Failed to load favorite movies. ' + (error.response?.data?.message || ''));
+    ElMessage.error('Failed to load liked movies. ' + (error.response?.data?.message || ''));
+  }
+}
+
+const fetchWatchlist = async () => {
+  try {
+    watchlist.value = await api.getWatchlist();
+  } catch (error) {
+    console.error('Error fetching watchlist:', error);
+    ElMessage.error('Failed to load watch later movies. ' + (error.response?.data?.message || ''));
+  }
+}
+
+const fetchWatched = async () => {
+  try {
+    watched.value = await api.getWatched();
+  } catch (error) {
+    console.error('Error fetching watched:', error);
+    ElMessage.error('Failed to load watched movies. ' + (error.response?.data?.message || ''));
   }
 }
 

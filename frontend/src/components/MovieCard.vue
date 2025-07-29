@@ -3,7 +3,8 @@ import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { StarFilled, Clock } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
-import { isAuthenticated, toggleWatchlist } from '../services/api';
+import { isAuthenticated, toggleWatchlist, toggleFavorite, toggleWatched } from '../services/api';
+// TODO: Import toggleFavorite from services/api when backend ready
 
 const router = useRouter();
 const props = defineProps({
@@ -16,6 +17,59 @@ const props = defineProps({
 const userRating = ref(0);
 const showRatingTooltip = ref(false);
 const addedToWatchlist = ref(false);
+const addedToFavorite = ref(false); // Track favorite status
+const isWatched = ref(false); // Track watched status
+
+const handleToggleWatched = async () => {
+  if (!isAuthenticated()) {
+    ElMessage.warning('Please login to mark movies as watched');
+    return;
+  }
+  try {
+    const movieId = Number(props.movie.tmdb_id || props.movie.id);
+    const response = await toggleWatched(movieId);
+    isWatched.value = response.watched;
+    if (response.watched) {
+      ElMessage.success('Marked as watched');
+    } else {
+      ElMessage.success('Unmarked as watched');
+    }
+  } catch (error) {
+    console.error('Error updating watched status:', error);
+    ElMessage.error('Failed to update watched status');
+  }
+}
+// Handle toggle favorite (like) button
+const handleToggleFavorite = async () => {
+  if (!isAuthenticated()) {
+    ElMessage.warning('Please login to like movies');
+    return;
+  }
+  try {
+    const movieId = Number(props.movie.tmdb_id || props.movie.id);
+    // First, toggle favorite
+    const response = await toggleFavorite(movieId);
+    addedToFavorite.value = response.added;
+    if (response.added) {
+      ElMessage.success('Added to favorites');
+      // Auto add to watched if not already
+      if (!isWatched.value) {
+        try {
+          const watchedResp = await toggleWatched(movieId);
+          isWatched.value = watchedResp.watched;
+        } catch (err) {
+          // Do not affect favorite main flow
+          console.error('Error auto-marking as watched:', err);
+        }
+      }
+    } else {
+      ElMessage.success('Removed from favorites');
+    }
+  } catch (error) {
+    console.error('Error updating favorite:', error);
+    ElMessage.error('Failed to update favorite');
+  }
+}
 const titleRef = ref(null);
 const isTextOverflow = ref(false);
 
@@ -85,7 +139,7 @@ const handleRating = async (value) => {
   
   try {
     // TODO: Implement rating API call
-    const response = await fetch(`/api/movies/${props.movie.id}/rate`, {
+    const response = await fetch(`/api/movie/${props.movie.id}/rate`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -157,6 +211,13 @@ const handleToggleWatchlist = async () => {
         <el-icon><star-filled /></el-icon>
         <span>{{ rating }}</span>
       </div>
+.favorite-btn {
+  min-width: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
     </div>
     <div class="movie-info">
       <h3 class="movie-title" 
@@ -167,30 +228,52 @@ const handleToggleWatchlist = async () => {
       </h3>
       <p class="year">{{ year }}</p>
 
-      <!-- User action area -->
-      <div class="user-actions">
-        <!-- User rating -->
-        <div class="user-rating">
-          <el-rate
-            v-model="userRating"
-            :disabled="false"
-            :allow-half="false"
-            @change="handleRating"
-            text-color="#ff9900"
-            void-color="#C6D1DE"
-          />
-        </div>
+      <!-- User rating -->
+      <div class="user-rating">
+        <el-rate
+          v-model="userRating"
+          :disabled="false"
+          :allow-half="false"
+          @change="handleRating"
+          text-color="#ff9900"
+          void-color="#C6D1DE"
+        />
+      </div>
 
-        <!-- Watch Later button -->
-        <el-button
-          :type="addedToWatchlist ? 'success' : 'default'"
-          size="small"
-          @click="handleToggleWatchlist"
-          class="watchlist-btn"
-        >
-          <el-icon><Clock /></el-icon>
-          {{ addedToWatchlist ? 'Added' : 'Watch Later' }}
-        </el-button>
+      <!-- Watch Later & Like/Favorite buttons side by side, now below the rating -->
+      <div class="user-actions">
+        <el-tooltip content="Watch Later" placement="top">
+          <el-button
+            :type="addedToWatchlist ? 'success' : 'default'"
+            size="small"
+            @click="handleToggleWatchlist"
+            class="watchlist-btn"
+          >
+            <el-icon><Clock /></el-icon>
+          </el-button>
+        </el-tooltip>
+        <el-tooltip content="Watched" placement="top">
+          <el-button
+            :type="isWatched ? 'primary' : 'default'"
+            size="small"
+            @click="handleToggleWatched"
+            class="watched-btn"
+          >
+            <el-icon>
+              <svg viewBox="0 0 24 24" width="1em" height="1em" fill="currentColor"><path d="M9 16.2l-3.5-3.5 1.4-1.4L9 13.4l7.1-7.1 1.4 1.4z"/></svg>
+            </el-icon>
+          </el-button>
+        </el-tooltip>
+        <el-tooltip content="Like" placement="top">
+          <el-button
+            :type="addedToFavorite ? 'danger' : 'default'"
+            size="small"
+            @click="handleToggleFavorite"
+            class="favorite-btn"
+          >
+            <el-icon><StarFilled /></el-icon>
+          </el-button>
+        </el-tooltip>
       </div>
     </div>
   </el-card>
@@ -330,8 +413,9 @@ const handleToggleWatchlist = async () => {
 .user-actions {
   margin-top: 10px;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   gap: 10px;
+  justify-content: center;
 }
 
 .user-rating {
@@ -348,12 +432,18 @@ const handleToggleWatchlist = async () => {
   color: #999;
 }
 
-.watchlist-btn {
-  width: 100%;
+.watchlist-btn,
+.favorite-btn,
+.watched-btn {
+  width: 40px;
+  min-width: 40px;
+  max-width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: 0;
+  padding: 0;
 }
 
 :deep(.el-rate) {

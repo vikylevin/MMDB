@@ -1,3 +1,21 @@
+// Toggle watched status for a movie
+export const toggleWatched = async (movieId) => {
+  const id = Number(movieId);
+  if (!id || isNaN(id)) {
+    throw new Error('Invalid movie id');
+  }
+  const response = await api.post('/user/watched', { movie_id: id });
+  return response.data;
+};
+// Toggle favorite (like/unlike) for a movie
+export const toggleFavorite = async (movieId) => {
+  const id = Number(movieId);
+  if (!id || isNaN(id)) {
+    throw new Error('Invalid movie id');
+  }
+  const response = await api.post('/user/favorites', { movie_id: id });
+  return response.data;
+};
 import axios from 'axios';
 
 const API_URL = 'http://localhost:5000/api';
@@ -36,8 +54,8 @@ api.interceptors.response.use(
 // Auth APIs
 export const login = async (username, password) => {
   const response = await api.post('/auth/login', { username, password });
-  const { token, user } = response.data;
-  localStorage.setItem('access_token', token);
+  const { access_token, user } = response.data;
+  localStorage.setItem('access_token', access_token);
   localStorage.setItem('user', JSON.stringify(user));
   return user;
 };
@@ -66,28 +84,31 @@ export const getProfile = async () => {
 };
 
 export const getWatchlist = async () => {
-  const response = await api.get('/watchlist');
+  const response = await api.get('/user/watchlist');
+  return response.data;
+};
+
+// Get user's liked (favorite) movies
+export const getFavorites = async () => {
+  const response = await api.get('/user/favorites');
+  return response.data;
+};
+
+// Get user's watched movies
+export const getWatched = async () => {
+  const response = await api.get('/user/watched');
   return response.data;
 };
 
 // Movie APIs
 export const toggleWatchlist = async (movieId) => {
-  // 参数校验，确保 movieId 为有效数字
   const id = Number(movieId);
   if (!id || isNaN(id)) {
     throw new Error('Invalid movie id');
   }
-  // 先检查是否已在 watchlist
-  const check = await api.get(`/watchlist/check/${id}`);
-  if (check.data.in_watchlist) {
-    // 已在 watchlist，移除
-    const response = await api.post(`/watchlist/remove/${id}`);
-    return { added: false, ...response.data };
-  } else {
-    // 不在 watchlist，添加
-    const response = await api.post(`/watchlist/add/${id}`);
-    return { added: true, ...response.data };
-  }
+  // 直接调用后端统一的 toggle watchlist 路由
+  const response = await api.post(`/movie/${id}/watchlist`);
+  return response.data;
 };
 
 export const rateMovie = async (movieId, rating) => {

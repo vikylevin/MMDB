@@ -65,8 +65,8 @@ const fetchMovieDetails = async () => {
     error.value = null;
 
     const [movieRes, reviewsRes] = await Promise.all([
-      axios.get(`http://127.0.0.1:5000/api/movies/${movieId.value}`),
-      axios.get(`http://127.0.0.1:5000/api/movies/${movieId.value}/reviews`)
+      axios.get(`http://127.0.0.1:5000/api/movie/${movieId.value}`),
+      axios.get(`http://127.0.0.1:5000/api/movie/${movieId.value}/reviews`)
     ]);
 
     movie.value = movieRes.data;
@@ -101,7 +101,7 @@ const submitReview = async () => {
   try {
     reviewSubmitting.value = true;
 
-    await axios.post(`http://localhost:5000/api/movies/${movieId.value}/reviews`, {
+    await axios.post(`http://localhost:5000/api/movie/${movieId.value}/reviews`, {
       author: userReview.value.name,
       rating: userReview.value.rating,
       content: userReview.value.comment

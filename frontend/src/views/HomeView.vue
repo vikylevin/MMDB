@@ -63,7 +63,7 @@ const loadingUpcoming = ref(false)
 const fetchPopularMovies = async () => {
   try {
     loadingPopular.value = true
-    const response = await axios.get('http://localhost:5000/api/movies/popular', {
+    const response = await axios.get('http://localhost:5000/api/movie/popular', {
       params: { page: 1, limit: 10 }
     })
     if (response.data && response.data.results) {
@@ -80,7 +80,7 @@ const fetchPopularMovies = async () => {
 const fetchTopRatedMovies = async () => {
   try {
     loadingTopRated.value = true
-    const response = await axios.get('http://localhost:5000/api/movies/top-rated', {
+    const response = await axios.get('http://localhost:5000/api/movie/category/top-rated', {
       params: { page: 1, limit: 10 }
     })
     if (response.data && response.data.results) {
@@ -97,7 +97,7 @@ const fetchTopRatedMovies = async () => {
 const fetchUpcomingMovies = async () => {
   try {
     loadingUpcoming.value = true
-    const response = await axios.get('http://localhost:5000/api/movies/upcoming', {
+    const response = await axios.get('http://localhost:5000/api/movie/category/upcoming', {
       params: { page: 1, limit: 10 }
     })
     if (response.data && response.data.results) {

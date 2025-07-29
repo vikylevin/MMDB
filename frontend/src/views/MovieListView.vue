@@ -35,7 +35,7 @@ const fetchMovies = async (page = 1) => {
     error.value = null;
 
     // All categories now use the same API endpoint pattern
-    let endpoint = `http://127.0.0.1:5000/api/movies/${category.value}`;
+    let endpoint = `http://127.0.0.1:5000/api/movie/category/${category.value}`;
     const response = await axios.get(endpoint, {
       params: { page }
     });
