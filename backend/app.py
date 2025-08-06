@@ -1,19 +1,13 @@
 import os
-from datetime import datetime, timedelta
-import requests
-from flask import Flask, jsonify, request, session
+from datetime import timedelta
+from flask import Flask
 from flask_cors import CORS
-from flask_jwt_extended import JWTManager, jwt_required, create_access_token, get_jwt_identity
+from flask_jwt_extended import JWTManager
 from dotenv import load_dotenv
 from models import db
 
 # Load environment variables
 load_dotenv()
-
-# TMDB API Configuration
-TMDB_BASE_URL = os.getenv('TMDB_BASE_URL', 'https://api.themoviedb.org/3')
-TMDB_API_KEY = os.getenv('TMDB_API_KEY')
-
 
 app = Flask(__name__)
 CORS(

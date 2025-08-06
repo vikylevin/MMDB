@@ -1,11 +1,14 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import axios from 'axios';
 import { ElMessage } from 'element-plus';
 import { Star, StarFilled, Clock, Calendar, MessageBox } from '@element-plus/icons-vue';
+import { isAuthenticated, getCurrentUser, rateMovie, getMovieRating, toggleWatchlist, toggleWatched } from '../services/api';
+import { isMovieInWatchlist, updateMovieStatus, isMovieWatched } from '../stores/movieStatus';
 
 const route = useRoute();
+const router = useRouter();
 const movieId = computed(() => route.params.id);
 
 const movie = ref(null);
@@ -13,46 +16,82 @@ const reviews = ref([]);
 const loading = ref(true);
 const error = ref(null);
 const userReview = ref({
-  name: '',
   rating: 0,
   comment: ''
 });
 const reviewSubmitting = ref(false);
 const showReviewForm = ref(false);
-const isInWatchlist = ref(false);
+const userRating = ref(0);
+const currentUser = ref(null);
+
+// Use global state for watchlist status
+const isInWatchlist = computed(() => {
+  return isMovieInWatchlist(Number(movieId.value));
+});
 
 const imageBaseUrl = 'https://image.tmdb.org/t/p/original';
 const posterBaseUrl = 'https://image.tmdb.org/t/p/w500';
 
-const checkWatchlistStatus = async () => {
-  const token = localStorage.getItem('token');
-  if (!token) return;
-  
-  try {
-    const response = await axios.get(`http://127.0.0.1:5000/api/watchlist/check/${movieId.value}`, {
-      headers: { 'X-Access-Token': token }
-    });
-    isInWatchlist.value = response.data.in_watchlist;
-  } catch (err) {
-    console.error('Error checking watchlist status:', err);
+// Check if user is authenticated
+const checkAuthentication = () => {
+  if (isAuthenticated()) {
+    currentUser.value = getCurrentUser();
   }
 };
 
-const toggleWatchlist = async () => {
-  const token = localStorage.getItem('token');
-  if (!token) {
+// Load user's rating for this movie
+const loadUserRating = async () => {
+  if (!isAuthenticated()) return;
+  
+  try {
+    const response = await getMovieRating(movieId.value);
+    userRating.value = response.rating || 0;
+  } catch (error) {
+    console.error('Error loading user rating:', error);
+  }
+};
+
+// Handle rating change
+const handleRating = async (rating) => {
+  if (!isAuthenticated()) {
+    ElMessage.warning('Please log in to rate movies');
+    return;
+  }
+
+  try {
+    await rateMovie(movieId.value, rating);
+    userRating.value = rating;
+    
+    // Auto-mark as watched when rating a movie (rating > 0)
+    if (rating > 0) {
+      // Since backend automatically adds to watched when rating, 
+      // we need to update the frontend state to reflect this
+      const movieIdNum = Number(movieId.value);
+      updateMovieStatus(movieIdNum, 'watched', true);
+    }
+    
+    ElMessage.success('Rating saved successfully');
+  } catch (error) {
+    console.error('Error saving rating:', error);
+    ElMessage.error('Failed to save rating');
+  }
+};
+
+const checkWatchlistStatus = async () => {
+  // No longer needed as we use global state
+};
+
+const toggleWatchlistHandler = async () => {
+  if (!isAuthenticated()) {
     ElMessage.warning('Please log in to add movies to your watchlist');
     return;
   }
 
   try {
-    const url = `http://127.0.0.1:5000/api/watchlist/${isInWatchlist.value ? 'remove' : 'add'}/${movieId.value}`;
-    await axios.post(url, {}, {
-      headers: { 'X-Access-Token': token }
-    });
-    
-    isInWatchlist.value = !isInWatchlist.value;
-    ElMessage.success(`Movie ${isInWatchlist.value ? 'added to' : 'removed from'} watchlist`);
+    const response = await toggleWatchlist(movieId.value);
+    // Update global state
+    updateMovieStatus(Number(movieId.value), 'watchlist', response.added);
+    ElMessage.success(`Movie ${response.added ? 'added to' : 'removed from'} watchlist`);
   } catch (err) {
     console.error('Error updating watchlist:', err);
     ElMessage.error('Failed to update watchlist. Please try again later.');
@@ -71,7 +110,7 @@ const fetchMovieDetails = async () => {
 
     movie.value = movieRes.data;
     reviews.value = reviewsRes.data.results || [];
-    await checkWatchlistStatus();
+    // No longer need to check watchlist status as we use global state
   } catch (err) {
     console.error('Error fetching movie details:', err);
     error.value = 'Failed to load movie details. Please try again later.';
@@ -94,47 +133,62 @@ const formatReleaseDate = (dateString) => {
 };
 
 const submitReview = async () => {
-  if (!userReview.value.name || userReview.value.rating === 0 || !userReview.value.comment) {
+  if (!isAuthenticated()) {
+    ElMessage.warning('Please log in to write a review');
     return;
   }
 
+  if (userReview.value.rating === 0) {
+    ElMessage.warning('Please select a rating');
+    return;
+  }
+
+  reviewSubmitting.value = true;
   try {
-    reviewSubmitting.value = true;
-
-    await axios.post(`http://localhost:5000/api/movie/${movieId.value}/reviews`, {
-      author: userReview.value.name,
+    // Submit review (this will also update the rating)
+    await axios.post(`http://127.0.0.1:5000/api/movie/${movieId.value}/reviews`, {
       rating: userReview.value.rating,
-      content: userReview.value.comment
+      comment: userReview.value.comment.trim()
+    }, {
+      headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` }
     });
-
-    // Add the new review to the list
-    reviews.value.unshift({
-      author: userReview.value.name,
-      author_details: {
-        rating: userReview.value.rating
-      },
-      content: userReview.value.comment,
-      created_at: new Date().toISOString()
-    });
-
-    // Reset the form
-    userReview.value = {
-      name: '',
-      rating: 0,
-      comment: ''
-    };
-
+    
+    // Update local rating state
+    userRating.value = userReview.value.rating;
+    
+    // Auto-mark as watched (backend handles this, but update frontend state)
+    const movieIdNum = Number(movieId.value);
+    updateMovieStatus(movieIdNum, 'watched', true);
+    
+    ElMessage.success('Review submitted successfully');
     showReviewForm.value = false;
+    userReview.value = { rating: 0, comment: '' };
+    await fetchMovieDetails(); // Refresh reviews
   } catch (err) {
     console.error('Error submitting review:', err);
-    error.value = 'Failed to submit review. Please try again later.';
+    if (err.response?.data?.error) {
+      ElMessage.error(`Failed to submit review: ${err.response.data.error}`);
+    } else {
+      ElMessage.error('Failed to submit review');
+    }
   } finally {
     reviewSubmitting.value = false;
   }
 };
 
+const showReviewFormHandler = () => {
+  if (!isAuthenticated()) {
+    ElMessage.warning('Please log in to write a review');
+    router.push('/login');
+    return;
+  }
+  showReviewForm.value = true;
+};
+
 onMounted(() => {
+  checkAuthentication();
   fetchMovieDetails();
+  loadUserRating();
 });
 </script>
 
@@ -216,14 +270,32 @@ onMounted(() => {
               </div>
 
               <div class="actions">
-                <el-button type="primary" @click="showReviewForm = true">
-                  <el-icon><message-box /></el-icon>
-                  Write a Review
-                </el-button>
-                <el-button @click="toggleWatchlist" :type="isInWatchlist ? 'danger' : 'success'">
-                  <el-icon><star-filled /></el-icon>
-                  {{ isInWatchlist ? 'Remove from Watchlist' : 'Add to Watchlist' }}
-                </el-button>
+                <!-- User Rating Section -->
+                <div class="user-rating-section">
+                  <h4>Rate this movie:</h4>
+                  <el-rate 
+                    v-model="userRating" 
+                    :max="5" 
+                    @change="handleRating"
+                    text-color="var(--rating-color)"
+                    void-color="var(--border-color)"
+                    :disabled="!isAuthenticated()"
+                  />
+                  <span v-if="!isAuthenticated()" class="login-hint">
+                    <router-link to="/login">Login to rate</router-link>
+                  </span>
+                </div>
+
+                <div class="action-buttons">
+                  <el-button @click="showReviewFormHandler" class="review-btn">
+                    <el-icon><message-box /></el-icon>
+                    {{ isAuthenticated() ? 'Write a Review' : 'Login to Review' }}
+                  </el-button>
+                  <el-button @click="toggleWatchlistHandler" class="watchlist-btn">
+                    <el-icon><star-filled /></el-icon>
+                    {{ isInWatchlist ? 'Remove from Watchlist' : 'Add to Watchlist' }}
+                  </el-button>
+                </div>
               </div>
             </div>
           </div>
@@ -245,33 +317,30 @@ onMounted(() => {
           <div v-if="showReviewForm" class="review-form">
             <h3>Write a Review</h3>
             <el-form>
-              <el-form-item label="Your Name">
-                <el-input v-model="userReview.name" placeholder="Enter your name" />
-              </el-form-item>
-
               <el-form-item label="Rating">
                 <el-rate 
                   v-model="userReview.rating" 
-                  :max="10" 
-                  show-score 
-                  score-template="{value}" 
+                  :max="5" 
+                  text-color="var(--rating-color)"
+                  void-color="var(--border-color)"
+                  :size="24"
                 />
               </el-form-item>
 
-              <el-form-item label="Your Review">
+              <el-form-item label="Your Review (Optional)">
                 <el-input 
                   v-model="userReview.comment" 
                   type="textarea" 
                   :rows="4" 
-                  placeholder="Share your thoughts about the movie"
+                  placeholder="Share your thoughts about the movie (optional)"
                 />
               </el-form-item>
 
               <el-form-item>
-                <el-button type="primary" @click="submitReview" :loading="reviewSubmitting">
+                <el-button @click="submitReview" :loading="reviewSubmitting" class="submit-btn">
                   Submit Review
                 </el-button>
-                <el-button @click="showReviewForm = false">Cancel</el-button>
+                <el-button @click="showReviewForm = false" class="cancel-btn">Cancel</el-button>
               </el-form-item>
             </el-form>
           </div>
@@ -299,7 +368,9 @@ onMounted(() => {
 
           <div v-else class="no-reviews">
             <p>No reviews yet. Be the first to review this movie!</p>
-            <el-button @click="showReviewForm = true">Write a Review</el-button>
+            <el-button @click="showReviewFormHandler" class="review-btn">
+              {{ isAuthenticated() ? 'Write a Review' : 'Login to Review' }}
+            </el-button>
           </div>
         </section>
       </div>
@@ -410,6 +481,57 @@ onMounted(() => {
   margin-top: 2rem;
 }
 
+.user-rating-section {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: var(--card-bg);
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+}
+
+.user-rating-section h4 {
+  margin: 0 0 1rem 0;
+  color: var(--text-color);
+  font-size: 1rem;
+}
+
+.login-hint {
+  margin-left: 1rem;
+  font-size: 0.9rem;
+  color: var(--light-text);
+}
+
+.login-hint a {
+  color: var(--rating-color);
+  text-decoration: none;
+}
+
+.login-hint a:hover {
+  text-decoration: underline;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 1rem;
+}
+
+.review-btn, .watchlist-btn, .submit-btn, .cancel-btn {
+  background: var(--card-bg);
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+  transition: all 0.3s ease;
+}
+
+.review-btn:hover, .watchlist-btn:hover, .submit-btn:hover {
+  background: var(--hover-color);
+  border-color: var(--secondary-color);
+}
+
+.cancel-btn:hover {
+  background: var(--hover-color);
+  border-color: var(--border-color);
+}
+
 .section-header {
   display: flex;
   justify-content: space-between;
@@ -476,6 +598,15 @@ onMounted(() => {
   padding: 1.5rem;
   margin-bottom: 2rem;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Larger stars in review form */
+.review-form .el-rate {
+  font-size: 28px;
+}
+
+.review-form .el-rate .el-icon {
+  margin-right: 8px;
 }
 
 </style>

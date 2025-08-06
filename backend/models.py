@@ -69,10 +69,25 @@ class Rating(db.Model):
         db.UniqueConstraint('user_id', 'movie_id', name='unique_user_movie_rating'),
     )
 
+# Review model for storing user reviews for movies
+class Review(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    movie_id = db.Column(db.Integer, db.ForeignKey('movie.id'), nullable=False)
+    rating = db.Column(db.Integer, nullable=False)  # Store rating in review as well for consistency
+    comment = db.Column(db.Text, nullable=True)  # Review comment (optional)
+    created_at = db.Column(db.DateTime, server_default=db.func.now())
+    updated_at = db.Column(db.DateTime, server_default=db.func.now(), onupdate=db.func.now())
+    __table_args__ = (
+        db.UniqueConstraint('user_id', 'movie_id', name='unique_user_movie_review'),
+    )
+
 
 # Add relationships after all classes are defined
 User.watchlist_items = db.relationship('WatchlistItem', backref='user', lazy=True)
 User.favorite_items = db.relationship('FavoriteItem', backref='user', lazy=True)
 User.watched_items = db.relationship('WatchedItem', backref='user', lazy=True)
 User.ratings = db.relationship('Rating', backref='user', lazy=True)
+User.reviews = db.relationship('Review', backref='user', lazy=True)
 Movie.ratings = db.relationship('Rating', backref='movie', lazy=True)
+Movie.reviews = db.relationship('Review', backref='movie', lazy=True)

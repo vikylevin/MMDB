@@ -1,10 +1,14 @@
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch, nextTick, inject } from 'vue';
 import { useRouter } from 'vue-router';
 import { StarFilled, Clock } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
-import { isAuthenticated, toggleWatchlist, toggleFavorite, toggleWatched } from '../services/api';
-// TODO: Import toggleFavorite from services/api when backend ready
+import { isAuthenticated, toggleWatchlist, toggleFavorite, toggleWatched, getFavorites, getWatchlist, getWatched, rateMovie, getMovieRating } from '../services/api';
+import { isMovieFavorite, isMovieInWatchlist, isMovieWatched, updateMovieStatus, isInitialized } from '../stores/movieStatus';
+import { isUserAuthenticated } from '../stores/auth';
+
+// Inject theme configuration
+const theme = inject('theme');
 
 const router = useRouter();
 const props = defineProps({
@@ -16,9 +20,40 @@ const props = defineProps({
 
 const userRating = ref(0);
 const showRatingTooltip = ref(false);
-const addedToWatchlist = ref(false);
-const addedToFavorite = ref(false); // Track favorite status
-const isWatched = ref(false); // Track watched status
+
+// Computed properties for rating styles - back to basics
+const ratingProps = computed(() => ({
+  size: 'small',
+  disabled: !isUserAuthenticated.value,
+  allowHalf: false,
+  voidColor: '#e0e0e0',
+  colors: ['#ffd700', '#ffd700', '#ffd700'],
+  showText: false,
+  textColor: '#ffd700'
+}));
+
+// Reactive rating state
+const isRated = computed(() => userRating.value > 0);
+const ratingMessage = computed(() => {
+  if (!isRated.value) return 'Click to rate this movie';
+  return `You rated this movie ${userRating.value} star${userRating.value > 1 ? 's' : ''}`;
+});
+
+// Use computed properties based on the global status store
+const addedToWatchlist = computed(() => {
+  const movieId = Number(props.movie.tmdb_id || props.movie.id);
+  return isMovieInWatchlist(movieId);
+});
+
+const addedToFavorite = computed(() => {
+  const movieId = Number(props.movie.tmdb_id || props.movie.id);
+  return isMovieFavorite(movieId);
+});
+
+const isWatched = computed(() => {
+  const movieId = Number(props.movie.tmdb_id || props.movie.id);
+  return isMovieWatched(movieId);
+});
 
 const handleToggleWatched = async () => {
   if (!isAuthenticated()) {
@@ -28,7 +63,7 @@ const handleToggleWatched = async () => {
   try {
     const movieId = Number(props.movie.tmdb_id || props.movie.id);
     const response = await toggleWatched(movieId);
-    isWatched.value = response.watched;
+    updateMovieStatus(movieId, 'watched', response.watched);
     if (response.watched) {
       ElMessage.success('Marked as watched');
     } else {
@@ -49,14 +84,15 @@ const handleToggleFavorite = async () => {
     const movieId = Number(props.movie.tmdb_id || props.movie.id);
     // First, toggle favorite
     const response = await toggleFavorite(movieId);
-    addedToFavorite.value = response.added;
+    updateMovieStatus(movieId, 'favorites', response.added);
+    
     if (response.added) {
       ElMessage.success('Added to favorites');
       // Auto add to watched if not already
-      if (!isWatched.value) {
+      if (!isMovieWatched(movieId)) {
         try {
           const watchedResp = await toggleWatched(movieId);
-          isWatched.value = watchedResp.watched;
+          updateMovieStatus(movieId, 'watched', watchedResp.watched);
         } catch (err) {
           // Do not affect favorite main flow
           console.error('Error auto-marking as watched:', err);
@@ -83,10 +119,60 @@ const checkTextOverflow = () => {
   }
 };
 
+// Load user rating for this movie
+const loadUserRating = async () => {
+  if (!isAuthenticated()) return;
+  
+  try {
+    const movieId = Number(props.movie.tmdb_id || props.movie.id);
+    if (!movieId || isNaN(movieId)) return;
+    
+    const response = await getMovieRating(movieId);
+    userRating.value = response.rating || 0;
+  } catch (error) {
+    console.error('Error loading user rating:', error);
+    // Don't show error message as this is background loading
+  }
+};
+
+// Watch authentication state changes
+watch(isUserAuthenticated, (newAuthState) => {
+  if (newAuthState) {
+    // User logged in, load rating immediately
+    loadUserRating();
+  } else {
+    // User logged out, clear rating
+    userRating.value = 0;
+  }
+});
+
+// Watch for initialization completion
+// Rating color management is now handled by Vue reactive properties
+// No need for manual DOM manipulation
+
+watch(isInitialized, (initialized) => {
+  if (initialized && isAuthenticated()) {
+    loadUserRating();
+  }
+});
+
+// Watch userRating changes - let CSS handle colors
+watch(userRating, (newRating, oldRating) => {
+  // Rating changed, let Element Plus and CSS handle the visual updates naturally
+  if (newRating !== oldRating) {
+    // Visual updates handled by CSS
+  }
+});
+
 onMounted(() => {
   checkTextOverflow();
   // Listen for window resize events
   window.addEventListener('resize', checkTextOverflow);
+  // Load user rating immediately when component mounts if authenticated
+  if (isAuthenticated()) {
+    loadUserRating(); // This will call forceRatingStarColors after loading data
+  }
+  // Don't call forceRatingStarColors here - let loadUserRating handle it
 });
 
 onUnmounted(() => {
@@ -95,8 +181,8 @@ onUnmounted(() => {
 
 const posterUrl = computed(() => {
   if (props.movie.poster_path) {
-    // Try smaller size for better loading performance and availability
-    return `https://image.tmdb.org/t/p/w342${props.movie.poster_path}`;
+    // Use higher quality image for better display
+    return `https://image.tmdb.org/t/p/w500${props.movie.poster_path}`;
   }
   // Support for pre-processed poster URL
   if (props.movie.poster && props.movie.poster.startsWith('http')) {
@@ -138,25 +224,28 @@ const handleRating = async (value) => {
   }
   
   try {
-    // TODO: Implement rating API call
-    const response = await fetch(`/api/movie/${props.movie.id}/rate`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ rating: value })
-    });
-
-    if (response.ok) {
-      userRating.value = value;
-      ElMessage({
-        message: 'Rating saved successfully',
-        type: 'success',
-        duration: 2000
-      });
-    } else {
-      throw new Error('Failed to save rating');
+    const movieId = Number(props.movie.tmdb_id || props.movie.id);
+    if (!movieId || isNaN(movieId)) {
+      throw new Error('Invalid movie ID');
     }
+    
+    await rateMovie(movieId, value);
+    userRating.value = value;
+    
+    // Auto-mark as watched when rating a movie (rating > 0)
+    if (value > 0) {
+      // Since backend automatically adds to watched when rating, 
+      // we need to update the frontend state to reflect this
+      updateMovieStatus(movieId, 'watched', true);
+    }
+    
+    ElMessage({
+      message: 'Rating saved successfully',
+      type: 'success',
+      duration: 2000
+    });
+    
+    // Let CSS handle star colors naturally
   } catch (error) {
     console.error('Error saving rating:', error);
     userRating.value = 0; // Reset rating on error
@@ -181,7 +270,7 @@ const handleToggleWatchlist = async () => {
       return;
     }
     const response = await toggleWatchlist(movieId);
-    addedToWatchlist.value = response.added;
+    updateMovieStatus(movieId, 'watchlist', response.added);
     if (response.added) {
       ElMessage.success('Added to watchlist');
     } else {
@@ -195,7 +284,11 @@ const handleToggleWatchlist = async () => {
 </script>
 
 <template>
-  <el-card :body-style="{ padding: '0px' }" class="movie-card">
+  <el-card 
+    :body-style="{ padding: '0px' }" 
+    class="movie-card"
+    :data-movie-id="movie.tmdb_id || movie.id"
+  >
     <div class="poster-container" @click="navigateToDetail">
       <template v-if="props.movie.poster_path">
         <img :src="posterUrl" :alt="movie.title" class="movie-poster" />
@@ -211,13 +304,6 @@ const handleToggleWatchlist = async () => {
         <el-icon><star-filled /></el-icon>
         <span>{{ rating }}</span>
       </div>
-.favorite-btn {
-  min-width: 100px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-}
     </div>
     <div class="movie-info">
       <h3 class="movie-title" 
@@ -228,16 +314,22 @@ const handleToggleWatchlist = async () => {
       </h3>
       <p class="year">{{ year }}</p>
 
-      <!-- User rating -->
+      <!-- User rating - simplified without background -->
       <div class="user-rating">
-        <el-rate
-          v-model="userRating"
-          :disabled="false"
-          :allow-half="false"
-          @change="handleRating"
-          text-color="#ff9900"
-          void-color="#C6D1DE"
-        />
+        <el-tooltip :content="ratingMessage" placement="top" :disabled="!isUserAuthenticated">
+          <el-rate
+            v-model="userRating"
+            :size="ratingProps.size"
+            :disabled="ratingProps.disabled"
+            :allow-half="ratingProps.allowHalf"
+            :void-color="ratingProps.voidColor"
+            :colors="ratingProps.colors"
+            :show-text="ratingProps.showText"
+            :text-color="ratingProps.textColor"
+            @change="handleRating"
+            class="movie-rating-stars"
+          />
+        </el-tooltip>
       </div>
 
       <!-- Watch Later & Like/Favorite buttons side by side, now below the rating -->
@@ -282,21 +374,76 @@ const handleToggleWatchlist = async () => {
 <style scoped>
 .movie-card {
   transition: transform 0.3s ease;
-  height: 100%;
-  max-height: 520px; /* Limit the maximum height of the card */
-  width: 220px;  /* Fixed width for all cards */
+  height: 520px; /* Increased from 500px to provide more space for action buttons */
+  width: 100%; /* Use 100% width instead of fixed width */
+  min-width: 220px; /* Increased minimum width */
+  max-width: 280px; /* Increased maximum width */
   margin-left: auto;
   margin-right: auto; /* Center the card in its container */
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  overflow: hidden;
+  position: relative;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Status indicators */
+.status-indicators {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.status-badge {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  color: white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.status-badge .el-icon {
+  font-size: 14px;
+}
+
+.status-badge .el-icon svg {
+  width: 14px;
+  height: 14px;
+}
+
+.favorite-badge {
+  background-color: var(--error-color);
+}
+
+.watched-badge {
+  background-color: var(--text-color);
+}
+
+.watchlist-badge {
+  background-color: var(--success-color);
 }
 
 .movie-card:hover {
   transform: translateY(-5px);
+  background: var(--hover-color);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
 }
 
 .poster-container {
   position: relative;
-  width: 220px; /* Fixed width matching the card */
-  aspect-ratio: 2/3;
+  width: 100%; /* Use full width of card */
+  height: 300px; /* Adjusted to 2:3 aspect ratio for TMDB posters */
   overflow: hidden;
   cursor: pointer;
   margin: 0 auto; /* Center the poster in the card */
@@ -306,22 +453,29 @@ const handleToggleWatchlist = async () => {
 .movie-poster {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: cover; /* Use cover to fill container completely */
+  object-position: center; /* Center the poster for best overall composition */
   display: block;
+  transition: transform 0.3s ease; /* Add smooth transition */
+}
+
+/* Slight zoom effect on hover for better poster appreciation */
+.movie-card:hover .movie-poster {
+  transform: scale(1.05);
 }
 
 .poster-placeholder {
   width: 100%;
   height: 100%;
-  background: #ffffff;
+  background: var(--background-color);
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
   padding: 1rem;
   text-align: center;
-  color: var(--el-text-color-regular);
-  border: 1px solid var(--el-border-color-light);
+  color: var(--light-text);
+  border: 1px solid var(--border-color);
 }
 
 .poster-placeholder h3 {
@@ -335,13 +489,14 @@ const handleToggleWatchlist = async () => {
   -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
-  color: var(--el-text-color-primary);
+  color: var(--text-color);
 }
 
 .poster-placeholder .release-date {
   margin: 0.5rem 0 0 0;
   font-size: 0.9em;
   opacity: 0.8;
+  color: var(--light-text);
 }
 
 .tmdb-rating {
@@ -358,16 +513,24 @@ const handleToggleWatchlist = async () => {
 }
 
 .movie-info {
-  padding: 14px;
+  padding: 8px 12px; /* Further reduced top/bottom padding */
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start; /* Changed from space-between to flex-start */
+  min-height: 100px; /* Increased from 80px to provide more space for buttons */
+  gap: 0; /* Remove gap completely to eliminate any spacing */
 }
 
 .movie-title {
-  margin: 0;
-  font-size: 1.1em;
+  margin: 0 0 4px 0; /* Reduced bottom margin */
+  font-size: 1.05em;
   width: 100%;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
+  color: var(--text-color);
+  line-height: 1.3;
 }
 
 /* Title scroll animation container */
@@ -376,7 +539,7 @@ const handleToggleWatchlist = async () => {
   overflow: hidden;
   text-overflow: clip;
   white-space: nowrap;
-  background: var(--el-bg-color);
+  background: var(--card-bg);
 }
 
 /* Scrolling text animation */
@@ -402,20 +565,22 @@ const handleToggleWatchlist = async () => {
 }
 
 .year {
-  color: #666;
-  margin: 5px 0;
-  font-size: 0.9em;
+  color: var(--light-text);
+  margin: 0 0 4px 0; /* Reduced bottom margin */
+  font-size: 0.85em;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .user-actions {
-  margin-top: 10px;
+  margin-top: auto; /* Push to bottom */
   display: flex;
   flex-direction: row;
-  gap: 10px;
+  gap: 16px; /* Further increased gap between buttons from 12px to 16px */
   justify-content: center;
+  padding-top: 0; /* Remove padding completely */
+  box-sizing: border-box;
 }
 
 .user-rating {
@@ -424,55 +589,135 @@ const handleToggleWatchlist = async () => {
   justify-content: center;
   gap: 8px;
   width: 100%;
-  padding: 5px 0;
+  padding: 0; /* Remove all padding */
+  margin-bottom: 8px; /* Add spacing between rating and buttons */
+  box-sizing: border-box;
 }
 
 .login-hint {
   font-size: 12px;
-  color: #999;
+  color: var(--light-text);
 }
 
 .watchlist-btn,
 .favorite-btn,
 .watched-btn {
-  width: 40px;
-  min-width: 40px;
-  max-width: 40px;
-  height: 40px;
+  width: 36px;
+  min-width: 36px;
+  max-width: 36px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 0;
   padding: 0;
-}
-
-:deep(.el-rate) {
-  display: inline-flex;
-  line-height: 1;
+  margin: 0 !important; /* Force remove any default margin */
   transition: all 0.3s ease;
-  justify-content: center;
+  border-radius: 8px;
 }
 
-:deep(.el-rate:hover) {
-  transform: scale(1.05);
+/* Increase icon size in action buttons */
+.watchlist-btn .el-icon,
+.favorite-btn .el-icon,
+.watched-btn .el-icon {
+  font-size: 16px;
 }
 
-:deep(.el-rate__icon) {
-  font-size: 22px;
-  margin-right: 6px;
-  transition: all 0.2s ease;
+.watchlist-btn .el-icon svg,
+.favorite-btn .el-icon svg,
+.watched-btn .el-icon svg {
+  width: 16px;
+  height: 16px;
 }
 
-:deep(.el-rate__icon--on) {
-  color: #ff9900;
+/* Active state styles for marked buttons */
+.watchlist-btn.el-button--success {
+  background-color: var(--success-color);
+  border-color: var(--success-color);
+  color: white;
   transform: scale(1.1);
+  box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
 }
 
-:deep(.el-rate__decimal) {
-  position: absolute;
-  top: 0;
-  left: 0;
-  display: inline-block;
-  overflow: hidden;
+.watched-btn.el-button--primary {
+  background-color: var(--text-color);
+  border-color: var(--text-color);
+  color: white;
+  transform: scale(1.1);
+  box-shadow: 0 2px 8px rgba(51, 51, 51, 0.3);
+}
+
+.favorite-btn.el-button--danger {
+  background-color: var(--error-color);
+  border-color: var(--error-color);
+  color: white;
+  transform: scale(1.1);
+  box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
+}
+
+.watchlist-btn.el-button--success:hover,
+.watched-btn.el-button--primary:hover,
+.favorite-btn.el-button--danger:hover {
+  transform: scale(1.15);
+}
+
+/* Simple rating styles - no background, no fancy effects */
+.movie-rating-stars {
+  display: inline-flex;
+  justify-content: center;
+  margin: 8px 0;
+  
+  /* Element Plus CSS variables override */
+  --el-rate-void-color: #e0e0e0;
+  --el-rate-fill-color: #ffd700;
+  --el-rate-text-color: #ffd700;
+}
+
+/* Ensure rating and actions spacing */
+.movie-card .user-rating {
+  margin-bottom: 8px;
+}
+
+.movie-card .user-actions {
+  padding-top: 0 !important; /* Remove all padding */
+  margin-top: auto !important;
+}
+
+/* Allow some spacing between rating and actions */
+.movie-card .user-rating + .user-actions {
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+}
+
+/* Override any Element Plus default spacing */
+.movie-card :deep(.el-rate) {
+  margin: 8px 0;
+  padding: 0;
+}
+
+.movie-card :deep(.el-button) {
+  margin: 0;
+}
+
+/* Element Plus rate component - clean CSS-only approach */
+:deep(.movie-rating-stars) {
+  /* Use Element Plus CSS variables - this is the correct way */
+  --el-rate-void-color: #e0e0e0;
+  --el-rate-fill-color: #ffd700;
+  --el-rate-disabled-void-color: #e0e0e0;
+}
+
+/* Ensure active stars show yellow color */
+:deep(.movie-rating-stars .el-rate__icon.is-active svg),
+:deep(.movie-rating-stars .el-rate__icon.is-active svg path) {
+  color: #ffd700;
+  fill: #ffd700;
+}
+
+/* Ensure inactive stars show gray color */
+:deep(.movie-rating-stars .el-rate__icon:not(.is-active) svg),
+:deep(.movie-rating-stars .el-rate__icon:not(.is-active) svg path) {
+  color: #e0e0e0;
+  fill: #e0e0e0;
 }
 </style>

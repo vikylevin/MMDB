@@ -183,6 +183,68 @@ onMounted(() => {
   align-items: stretch; /* Ensure all cards stretch to the same height */
 }
 
+/* Home page specific movie card styling */
+.movies-row :deep(.movie-card) {
+  width: 200px;
+  min-width: 200px;
+  max-width: 200px;
+  height: 460px; /* Increased from 440px to provide more space for action buttons */
+}
+
+.movies-row :deep(.poster-container) {
+  height: 300px; /* Set to 2:3 aspect ratio (200px width : 300px height) for TMDB posters */
+}
+
+.movies-row :deep(.movie-info) {
+  padding: 10px;
+  min-height: 120px; /* Reduced to make room for larger poster */
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+.movies-row :deep(.user-rating) {
+  margin-bottom: 6px; /* Add spacing between rating and buttons */
+  padding: 0; /* Remove any padding */
+}
+
+.movies-row :deep(.user-actions) {
+  gap: 14px; /* Further increased gap between buttons for better spacing */
+  margin-top: auto; /* Push buttons to bottom */
+  padding-top: 0; /* Remove padding */
+}
+
+.movies-row :deep(.watchlist-btn),
+.movies-row :deep(.favorite-btn),
+.movies-row :deep(.watched-btn) {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  max-width: 32px;
+}
+
+.movies-row :deep(.el-rate__icon) {
+  font-size: 16px;
+  margin-right: 5px; /* Further increased spacing between stars for better visual */
+}
+
+/* Ensure rating stars are yellow in home view */
+.movies-row :deep(.el-rate__icon--on) {
+  color: #ffd700 !important; /* Force yellow color for filled stars */
+}
+
+.movies-row :deep(.el-rate__item.is-active .el-rate__icon) {
+  color: #ffd700 !important; /* Force yellow color for active stars */
+}
+
+.movies-row :deep(.el-rate__item:not(.is-disabled) .el-rate__icon) {
+  color: #e0e0e0; /* Gray for unrated stars */
+}
+
+.movies-row :deep(.el-rate__item:not(.is-disabled).is-active .el-rate__icon) {
+  color: #ffd700 !important; /* Yellow for rated stars */
+}
+
 /* Add fade effect to indicate more content */
 .scrollable-container::after {
   content: '';

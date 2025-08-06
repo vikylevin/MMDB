@@ -1,22 +1,5 @@
-// Toggle watched status for a movie
-export const toggleWatched = async (movieId) => {
-  const id = Number(movieId);
-  if (!id || isNaN(id)) {
-    throw new Error('Invalid movie id');
-  }
-  const response = await api.post('/user/watched', { movie_id: id });
-  return response.data;
-};
-// Toggle favorite (like/unlike) for a movie
-export const toggleFavorite = async (movieId) => {
-  const id = Number(movieId);
-  if (!id || isNaN(id)) {
-    throw new Error('Invalid movie id');
-  }
-  const response = await api.post('/user/favorites', { movie_id: id });
-  return response.data;
-};
 import axios from 'axios';
+import { setAuthState } from '../stores/auth';
 
 const API_URL = 'http://localhost:5000/api';
 
@@ -45,6 +28,8 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       localStorage.removeItem('access_token');
       localStorage.removeItem('user');
+      // Update reactive auth state
+      setAuthState(false, null);
       window.location.href = '/login';
     }
     return Promise.reject(error);
@@ -57,6 +42,8 @@ export const login = async (username, password) => {
   const { access_token, user } = response.data;
   localStorage.setItem('access_token', access_token);
   localStorage.setItem('user', JSON.stringify(user));
+  // Update reactive auth state
+  setAuthState(true, user);
   return user;
 };
 
@@ -75,6 +62,8 @@ export const register = async (username, email, password) => {
 export const logout = () => {
   localStorage.removeItem('access_token');
   localStorage.removeItem('user');
+  // Update reactive auth state
+  setAuthState(false, null);
 };
 
 // User APIs
@@ -112,12 +101,12 @@ export const toggleWatchlist = async (movieId) => {
 };
 
 export const rateMovie = async (movieId, rating) => {
-  const response = await api.post(`/movies/${movieId}/rate`, { rating });
+  const response = await api.post(`/movie/${movieId}/rate`, { rating });
   return response.data;
 };
 
 export const getMovieRating = async (movieId) => {
-  const response = await api.get(`/movies/${movieId}/rating`);
+  const response = await api.get(`/movie/${movieId}/rating`);
   return response.data;
 };
 
@@ -130,4 +119,30 @@ export const isAuthenticated = () => {
 export const getCurrentUser = () => {
   const userStr = localStorage.getItem('user');
   return userStr ? JSON.parse(userStr) : null;
+};
+
+// Get user's reviews
+export const getUserReviews = async () => {
+  const response = await api.get('/user/reviews');
+  return response.data;
+};
+
+// Toggle watched status for a movie
+export const toggleWatched = async (movieId) => {
+  const id = Number(movieId);
+  if (!id || isNaN(id)) {
+    throw new Error('Invalid movie id');
+  }
+  const response = await api.post('/user/watched', { movie_id: id });
+  return response.data;
+};
+
+// Toggle favorite (like/unlike) for a movie
+export const toggleFavorite = async (movieId) => {
+  const id = Number(movieId);
+  if (!id || isNaN(id)) {
+    throw new Error('Invalid movie id');
+  }
+  const response = await api.post('/user/favorites', { movie_id: id });
+  return response.data;
 };

@@ -1,7 +1,8 @@
 <script setup>
 import { ref, nextTick, onMounted, onUnmounted } from 'vue';
-import { Search, User } from '@element-plus/icons-vue';
+import { Search, User, Menu, ArrowDown } from '@element-plus/icons-vue';
 import { useRouter } from 'vue-router';
+import { currentUser, setAuthState } from '../stores/auth';
 
 defineProps({
   darkMode: Boolean
@@ -13,7 +14,8 @@ const searchQuery = ref('');
 const isMenuOpen = ref(false);
 const isSearchExpanded = ref(false);
 
-const user = ref(null);
+// Use reactive user from auth store instead of local state
+const user = currentUser;
 
 // Add click outside handler
 const handleClickOutside = (event) => {
@@ -27,25 +29,11 @@ const handleClickOutside = (event) => {
 // Add event listeners when component is mounted
 onMounted(() => {
   document.addEventListener('click', handleClickOutside);
-  // Initial check
-  updateUserState();
-  // Check periodically
-  const interval = setInterval(updateUserState, 1000);
-  // Add storage change listener
-  window.addEventListener('storage', updateUserState);
-  
-  // Clean up interval on unmount
-  onUnmounted(() => {
-    clearInterval(interval);
-  });
 });
 
 // Remove event listeners when component is unmounted
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside);
-  window.removeEventListener('storage', () => {
-    user.value = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')) : null;
-  });
 });
 
 const handleSearch = () => {
@@ -74,16 +62,6 @@ const toggleMenu = () => {
   isMenuOpen.value = !isMenuOpen.value;
 };
 
-const updateUserState = () => {
-  const userStr = localStorage.getItem('user');
-  const token = localStorage.getItem('access_token');
-  if (userStr && token) {
-    user.value = JSON.parse(userStr);
-  } else {
-    user.value = null;
-  }
-};
-
 const handleLogin = () => {
   router.push('/login');
 };
@@ -92,7 +70,8 @@ const handleLogout = () => {
   localStorage.removeItem('user');
   localStorage.removeItem('access_token');
   localStorage.removeItem('login_time');
-  updateUserState();
+  // Update the auth state immediately
+  setAuthState(false, null);
   router.push('/login');
 };
 </script>
@@ -109,17 +88,17 @@ const handleLogout = () => {
 
         <nav class="main-nav">
           <ul>
-            <li>
-              <router-link to="/">Home</router-link>
+            <li class="nav-item">
+              <router-link to="/" class="nav-link">Home</router-link>
             </li>
-            <li>
-              <router-link to="/movies/popular">Popular</router-link>
+            <li class="nav-item">
+              <router-link to="/movies/popular" class="nav-link">Popular</router-link>
             </li>
-            <li>
-              <router-link to="/movies/top-rated">Top Rated</router-link>
+            <li class="nav-item">
+              <router-link to="/movies/top-rated" class="nav-link">Top Rated</router-link>
             </li>
-            <li>
-              <router-link to="/movies/upcoming">Upcoming</router-link>
+            <li class="nav-item">
+              <router-link to="/movies/upcoming" class="nav-link">Upcoming</router-link>
             </li>
           </ul>
         </nav>
@@ -220,7 +199,7 @@ const handleLogout = () => {
 .logo {
   font-size: 1.5rem;
   font-weight: bold;
-  color: var(--secondary-color);
+  color: #333;
   text-decoration: none;
 }
 
@@ -249,16 +228,25 @@ const handleLogout = () => {
   gap: 1.5rem;
 }
 
-.main-nav a {
-  color: var(--text-color);
-  font-weight: 500;
-  text-decoration: none;
-  transition: color 0.2s;
+.nav-item {
+  position: relative;
 }
 
-.main-nav a:hover,
-.main-nav a.router-link-active {
-  color: var(--secondary-color);
+.nav-link {
+  color: #666;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 0.2s;
+  padding: 0.5rem 0;
+}
+
+.nav-link:hover {
+  color: #333;
+}
+
+.nav-link.router-link-active {
+  color: #333;
+  font-weight: 700;
 }
 
 .search-container {
