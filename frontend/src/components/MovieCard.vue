@@ -718,4 +718,73 @@ const handleToggleWatchlist = async () => {
   color: #e0e0e0;
   fill: #e0e0e0;
 }
+
+/* Ensure button icons are visible with high specificity */
+.user-actions .el-button .el-icon,
+.user-actions .el-button .el-icon svg {
+  font-size: 14px !important;
+  display: inline-flex !important;
+}
+
+/* Success button (watchlist added) - green background, white icon */
+.user-actions .el-button--success,
+.user-actions .watchlist-btn.el-button--success {
+  background-color: #67c23a !important;
+  border-color: #67c23a !important;
+  color: white !important;
+}
+
+.user-actions .el-button--success .el-icon,
+.user-actions .el-button--success .el-icon svg,
+.user-actions .watchlist-btn.el-button--success .el-icon,
+.user-actions .watchlist-btn.el-button--success .el-icon svg {
+  color: white !important;
+  fill: white !important;
+}
+
+/* Primary button (watched) - blue background, white icon */
+.user-actions .el-button--primary,
+.user-actions .watched-btn.el-button--primary {
+  background-color: #409eff !important;
+  border-color: #409eff !important;
+  color: white !important;
+}
+
+.user-actions .el-button--primary .el-icon,
+.user-actions .el-button--primary .el-icon svg,
+.user-actions .watched-btn.el-button--primary .el-icon,
+.user-actions .watched-btn.el-button--primary .el-icon svg {
+  color: white !important;
+  fill: white !important;
+}
+
+/* Danger button (favorite) - red background, white icon */
+.user-actions .el-button--danger,
+.user-actions .favorite-btn.el-button--danger {
+  background-color: #f56c6c !important;
+  border-color: #f56c6c !important;
+  color: white !important;
+}
+
+.user-actions .el-button--danger .el-icon,
+.user-actions .el-button--danger .el-icon svg,
+.user-actions .favorite-btn.el-button--danger .el-icon,
+.user-actions .favorite-btn.el-button--danger .el-icon svg {
+  color: white !important;
+  fill: white !important;
+}
+
+/* Default button - light background, black icon */
+.user-actions .el-button--default .el-icon,
+.user-actions .el-button--default .el-icon svg {
+  color: #000000 !important;
+  fill: #000000 !important;
+}
+
+/* Hover states for default buttons */
+.user-actions .el-button--default:hover .el-icon,
+.user-actions .el-button--default:hover .el-icon svg {
+  color: white !important;
+  fill: white !important;
+}
 </style>
