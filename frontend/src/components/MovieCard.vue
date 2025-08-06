@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch, nextTick, inject } from 'vue';
 import { useRouter } from 'vue-router';
-import { StarFilled, Clock } from '@element-plus/icons-vue';
+import { StarFilled, Clock, Check } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
 import { isAuthenticated, toggleWatchlist, toggleFavorite, toggleWatched, getFavorites, getWatchlist, getWatched, rateMovie, getMovieRating } from '../services/api';
 import { isMovieFavorite, isMovieInWatchlist, isMovieWatched, updateMovieStatus, isInitialized } from '../stores/movieStatus';
@@ -301,7 +301,7 @@ const handleToggleWatchlist = async () => {
       </template>
       <!-- TMDB rating in top right corner -->
       <div class="tmdb-rating">
-        <el-icon><star-filled /></el-icon>
+        <el-icon><StarFilled /></el-icon>
         <span>{{ rating }}</span>
       </div>
     </div>
@@ -351,9 +351,7 @@ const handleToggleWatchlist = async () => {
             @click="handleToggleWatched"
             class="watched-btn"
           >
-            <el-icon>
-              <svg viewBox="0 0 24 24" width="1em" height="1em" fill="currentColor"><path d="M9 16.2l-3.5-3.5 1.4-1.4L9 13.4l7.1-7.1 1.4 1.4z"/></svg>
-            </el-icon>
+            <el-icon><Check /></el-icon>
           </el-button>
         </el-tooltip>
         <el-tooltip content="Like" placement="top">

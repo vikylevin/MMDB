@@ -238,18 +238,18 @@ onMounted(() => {
 
               <div class="movie-meta">
                 <div class="rating">
-                  <el-icon><star-filled /></el-icon>
+                  <el-icon><StarFilled /></el-icon>
                   <span>{{ (Math.round(movie.vote_average * 10) / 10).toFixed(1) }}</span>
                   <span class="vote-count">({{ movie.vote_count }} votes)</span>
                 </div>
 
                 <div class="meta-item" v-if="movie.runtime">
-                  <el-icon><clock /></el-icon>
+                  <el-icon><Clock /></el-icon>
                   <span>{{ formatRuntime(movie.runtime) }}</span>
                 </div>
 
                 <div class="meta-item" v-if="movie.release_date">
-                  <el-icon><calendar /></el-icon>
+                  <el-icon><Calendar /></el-icon>
                   <span>{{ formatReleaseDate(movie.release_date) }}</span>
                 </div>
               </div>
@@ -288,11 +288,11 @@ onMounted(() => {
 
                 <div class="action-buttons">
                   <el-button @click="showReviewFormHandler" class="review-btn">
-                    <el-icon><message-box /></el-icon>
+                    <el-icon><MessageBox /></el-icon>
                     {{ isAuthenticated() ? 'Write a Review' : 'Login to Review' }}
                   </el-button>
                   <el-button @click="toggleWatchlistHandler" class="watchlist-btn">
-                    <el-icon><star-filled /></el-icon>
+                    <el-icon><StarFilled /></el-icon>
                     {{ isInWatchlist ? 'Remove from Watchlist' : 'Add to Watchlist' }}
                   </el-button>
                 </div>
@@ -351,7 +351,7 @@ onMounted(() => {
               <div class="review-header">
                 <h4>{{ review.author }}</h4>
                 <div class="review-rating" v-if="review.author_details && review.author_details.rating">
-                  <el-icon><star-filled /></el-icon>
+                  <el-icon><StarFilled /></el-icon>
                   <span>{{ review.author_details.rating }}</span>
                 </div>
               </div>
