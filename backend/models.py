@@ -82,6 +82,27 @@ class Review(db.Model):
         db.UniqueConstraint('user_id', 'movie_id', name='unique_user_movie_review'),
     )
 
+# ReviewLike model for storing user likes on reviews
+class ReviewLike(db.Model):
+    __tablename__ = 'review_like'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    review_id = db.Column(db.Integer, db.ForeignKey('review.id'), nullable=False)
+    created_at = db.Column(db.DateTime, server_default=db.func.now())
+    __table_args__ = (
+        db.UniqueConstraint('user_id', 'review_id', name='unique_user_review_like'),
+    )
+
+# ReviewComment model for storing comments on reviews
+class ReviewComment(db.Model):
+    __tablename__ = 'review_comment'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    review_id = db.Column(db.Integer, db.ForeignKey('review.id'), nullable=False)
+    comment = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, server_default=db.func.now())
+    updated_at = db.Column(db.DateTime, server_default=db.func.now(), onupdate=db.func.now())
+
 
 # Add relationships after all classes are defined
 User.watchlist_items = db.relationship('WatchlistItem', backref='user', lazy=True)
@@ -89,5 +110,11 @@ User.favorite_items = db.relationship('FavoriteItem', backref='user', lazy=True)
 User.watched_items = db.relationship('WatchedItem', backref='user', lazy=True)
 User.ratings = db.relationship('Rating', backref='user', lazy=True)
 User.reviews = db.relationship('Review', backref='user', lazy=True)
+User.review_likes = db.relationship('ReviewLike', backref='user', lazy=True)
+User.review_comments = db.relationship('ReviewComment', backref='user', lazy=True)
+
 Movie.ratings = db.relationship('Rating', backref='movie', lazy=True)
 Movie.reviews = db.relationship('Review', backref='movie', lazy=True)
+
+Review.likes = db.relationship('ReviewLike', backref='review', lazy=True, cascade='all, delete-orphan')
+Review.comments = db.relationship('ReviewComment', backref='review', lazy=True, cascade='all, delete-orphan')

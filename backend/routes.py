@@ -4,8 +4,9 @@ from datetime import datetime
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity, create_access_token
 from flask_cors import cross_origin
-from models import db, User, Movie, Rating, Review, WatchlistItem, WatchedItem, FavoriteItem
+from models import db, User, Movie, Rating, Review, WatchlistItem, WatchedItem, FavoriteItem, ReviewLike, ReviewComment
 from tmdb import fetch_movie_details, get_popular_movies, get_top_rated_movies, get_upcoming_movies, get_movie_genres, get_available_languages
+from geo_utils import get_user_region
 
 # Define blueprints
 auth_bp = Blueprint('auth', __name__)
@@ -20,25 +21,53 @@ TMDB_API_KEY = os.getenv('TMDB_API_KEY')
 @movie_bp.route('/<int:movie_id>/reviews', methods=['GET'])
 def get_movie_reviews(movie_id):
     """
-    Return reviews for a movie from local database
+    Return reviews for a movie from local database with interaction data
     """
+    current_user_id = None
+    # Get current user if authenticated (optional for viewing reviews)
+    try:
+        from flask_jwt_extended import get_jwt_identity, verify_jwt_in_request
+        verify_jwt_in_request(optional=True)
+        current_user_id = get_jwt_identity()
+    except:
+        pass
+    
     # Find the movie in local database
     movie = Movie.query.filter_by(tmdb_id=movie_id).first()
     if not movie:
         return jsonify([])
     
     # Get all reviews for this movie
-    reviews = Review.query.filter_by(movie_id=movie.id).all()
+    reviews = Review.query.filter_by(movie_id=movie.id).order_by(Review.created_at.desc()).all()
     review_list = []
     
     for review in reviews:
         user = User.query.get(review.user_id)
+        
+        # Count likes for this review
+        like_count = ReviewLike.query.filter_by(review_id=review.id).count()
+        
+        # Count comments for this review
+        comment_count = ReviewComment.query.filter_by(review_id=review.id).count()
+        
+        # Check if current user has liked this review
+        user_has_liked = False
+        if current_user_id:
+            user_has_liked = ReviewLike.query.filter_by(
+                user_id=current_user_id, 
+                review_id=review.id
+            ).first() is not None
+        
         review_data = {
             'id': review.id,
             'author': user.username if user else 'Unknown',
             'rating': review.rating,
             'comment': review.comment,
-            'created_at': review.created_at.isoformat() if review.created_at else None
+            'created_at': review.created_at.isoformat() if review.created_at else None,
+            'updated_at': review.updated_at.isoformat() if review.updated_at else None,
+            'like_count': like_count,
+            'comment_count': comment_count,
+            'user_has_liked': user_has_liked
         }
         review_list.append(review_data)
     
@@ -228,7 +257,7 @@ def toggle_watched():
     return jsonify(movies)
 
 @movie_bp.route('/popular', methods=['GET'])
-def get_popular_movies():
+def popular_movies_route():
     """Return a list of popular movies from TMDB."""
     page = request.args.get('page', 1, type=int)
     url = f'{TMDB_BASE_URL}/movie/popular'
@@ -309,12 +338,15 @@ def get_movies_by_category(category):
                 with_original_language=with_original_language
             )
         elif category == 'upcoming':
+            # Get user's region based on IP address for region-specific upcoming movies
+            user_region = get_user_region()
             data = get_upcoming_movies(
                 page=page,
                 with_genres=with_genres,
                 vote_average_gte=vote_average_gte,
                 vote_average_lte=vote_average_lte,
-                with_original_language=with_original_language
+                with_original_language=with_original_language,
+                region=user_region
             )
         else:  # now-playing - fallback to original API
             tmdb_category = category_mapping[category]
@@ -774,3 +806,175 @@ def get_user_reviews():
     reviews.sort(key=lambda x: x['created_at'] or '', reverse=True)
     
     return jsonify(reviews)
+
+# Review interaction routes
+@movie_bp.route('/reviews/<int:review_id>/like', methods=['POST'])
+@cross_origin(origins=["http://localhost:5173"], supports_credentials=True)
+@jwt_required()
+def toggle_review_like(review_id):
+    """
+    Toggle like status for a review
+    """
+    user_id = get_jwt_identity()
+    
+    # Check if review exists
+    review = Review.query.get(review_id)
+    if not review:
+        return jsonify({'error': 'Review not found'}), 404
+    
+    # Check if user has already liked this review
+    existing_like = ReviewLike.query.filter_by(
+        user_id=user_id, 
+        review_id=review_id
+    ).first()
+    
+    if existing_like:
+        # Unlike: remove the like
+        db.session.delete(existing_like)
+        db.session.commit()
+        liked = False
+    else:
+        # Like: add a new like
+        new_like = ReviewLike(user_id=user_id, review_id=review_id)
+        db.session.add(new_like)
+        db.session.commit()
+        liked = True
+    
+    # Get updated like count
+    like_count = ReviewLike.query.filter_by(review_id=review_id).count()
+    
+    return jsonify({
+        'liked': liked,
+        'like_count': like_count
+    })
+
+@movie_bp.route('/reviews/<int:review_id>/comments', methods=['GET'])
+def get_review_comments(review_id):
+    """
+    Get all comments for a specific review
+    """
+    # Check if review exists
+    review = Review.query.get(review_id)
+    if not review:
+        return jsonify({'error': 'Review not found'}), 404
+    
+    # Get all comments for this review
+    comments = ReviewComment.query.filter_by(review_id=review_id).order_by(ReviewComment.created_at.asc()).all()
+    comment_list = []
+    
+    for comment in comments:
+        user = User.query.get(comment.user_id)
+        comment_data = {
+            'id': comment.id,
+            'author': user.username if user else 'Unknown',
+            'comment': comment.comment,
+            'created_at': comment.created_at.isoformat() if comment.created_at else None
+        }
+        comment_list.append(comment_data)
+    
+    return jsonify(comment_list)
+
+@movie_bp.route('/reviews/<int:review_id>/comments', methods=['POST'])
+@cross_origin(origins=["http://localhost:5173"], supports_credentials=True)
+@jwt_required()
+def add_review_comment(review_id):
+    """
+    Add a comment to a review
+    """
+    user_id = get_jwt_identity()
+    data = request.get_json()
+    
+    comment_text = data.get('comment', '').strip()
+    if not comment_text:
+        return jsonify({'error': 'Comment text is required'}), 400
+    
+    # Check if review exists
+    review = Review.query.get(review_id)
+    if not review:
+        return jsonify({'error': 'Review not found'}), 404
+    
+    # Create new comment
+    new_comment = ReviewComment(
+        user_id=user_id,
+        review_id=review_id,
+        comment=comment_text
+    )
+    
+    db.session.add(new_comment)
+    db.session.commit()
+    
+    # Return the new comment
+    user = User.query.get(user_id)
+    return jsonify({
+        'id': new_comment.id,
+        'author': user.username if user else 'Unknown',
+        'comment': new_comment.comment,
+        'created_at': new_comment.created_at.isoformat()
+    }), 201
+
+# Review management routes
+@movie_bp.route('/reviews/<int:review_id>', methods=['PUT'])
+@cross_origin(origins=["http://localhost:5173"], supports_credentials=True)
+@jwt_required()
+def update_review(review_id):
+    """
+    Update a review (only by the author)
+    """
+    user_id = get_jwt_identity()
+    data = request.get_json()
+    
+    # Check if review exists and belongs to current user
+    review = Review.query.filter_by(id=review_id, user_id=user_id).first()
+    if not review:
+        return jsonify({'error': 'Review not found or you do not have permission to edit it'}), 404
+    
+    # Validate input
+    rating = data.get('rating')
+    comment = data.get('comment', '').strip()
+    
+    if not rating or rating < 1 or rating > 5:
+        return jsonify({'error': 'Rating must be between 1 and 5'}), 400
+    
+    # Update review
+    review.rating = rating
+    review.comment = comment if comment else None
+    review.updated_at = db.func.now()
+    
+    # Also update the rating record
+    rating_record = Rating.query.filter_by(user_id=user_id, movie_id=review.movie_id).first()
+    if rating_record:
+        rating_record.rating = rating
+        rating_record.updated_at = db.func.now()
+    
+    db.session.commit()
+    
+    # Return updated review
+    user = User.query.get(user_id)
+    return jsonify({
+        'id': review.id,
+        'author': user.username if user else 'Unknown',
+        'rating': review.rating,
+        'comment': review.comment,
+        'created_at': review.created_at.isoformat(),
+        'updated_at': review.updated_at.isoformat()
+    })
+
+@movie_bp.route('/reviews/<int:review_id>', methods=['DELETE'])
+@cross_origin(origins=["http://localhost:5173"], supports_credentials=True)
+@jwt_required()
+def delete_review(review_id):
+    """
+    Delete a review (only by the author)
+    """
+    user_id = get_jwt_identity()
+    
+    # Check if review exists and belongs to current user
+    review = Review.query.filter_by(id=review_id, user_id=user_id).first()
+    if not review:
+        return jsonify({'error': 'Review not found or you do not have permission to delete it'}), 404
+    
+    # Delete the review (cascade will handle likes and comments)
+    db.session.delete(review)
+    db.session.commit()
+    
+    return jsonify({'message': 'Review deleted successfully'})

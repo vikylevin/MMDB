@@ -2,9 +2,10 @@
 import { ref, onMounted, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import axios from 'axios';
-import { ElMessage } from 'element-plus';
-import { Star, StarFilled, Clock, Calendar, MessageBox } from '@element-plus/icons-vue';
-import { isAuthenticated, getCurrentUser, rateMovie, getMovieRating, toggleWatchlist, toggleWatched } from '../services/api';
+import { ElMessage, ElMessageBox } from 'element-plus';
+import { Star, StarFilled, Clock, Calendar, MessageBox, Edit, Delete } from '@element-plus/icons-vue';
+import { isAuthenticated, getCurrentUser, rateMovie, getMovieRating, toggleWatchlist, toggleWatched,
+         submitReview, getMovieReviews, toggleReviewLike, addReviewComment, updateReview, deleteReview } from '../services/api';
 import { isMovieInWatchlist, updateMovieStatus, isMovieWatched } from '../stores/movieStatus';
 
 const route = useRoute();
@@ -23,6 +24,18 @@ const reviewSubmitting = ref(false);
 const showReviewForm = ref(false);
 const userRating = ref(0);
 const currentUser = ref(null);
+
+// Review editing state
+const editingReviewId = ref(null);
+const editReviewData = ref({
+  rating: 0,
+  comment: ''
+});
+
+// Review interaction state
+const reviewComments = ref({});
+const showCommentForms = ref({});
+const commentTexts = ref({});
 
 // Use global state for watchlist status
 const isInWatchlist = computed(() => {
@@ -103,13 +116,13 @@ const fetchMovieDetails = async () => {
     loading.value = true;
     error.value = null;
 
-    const [movieRes, reviewsRes] = await Promise.all([
+    const [movieRes, reviewsData] = await Promise.all([
       axios.get(`http://127.0.0.1:5000/api/movie/${movieId.value}`),
-      axios.get(`http://127.0.0.1:5000/api/movie/${movieId.value}/reviews`)
+      getMovieReviews(movieId.value)
     ]);
 
     movie.value = movieRes.data;
-    reviews.value = reviewsRes.data.results || [];
+    reviews.value = reviewsData || [];
     // No longer need to check watchlist status as we use global state
   } catch (err) {
     console.error('Error fetching movie details:', err);
@@ -132,7 +145,7 @@ const formatReleaseDate = (dateString) => {
   return new Date(dateString).toLocaleDateString(undefined, options);
 };
 
-const submitReview = async () => {
+const submitUserReview = async () => {
   if (!isAuthenticated()) {
     ElMessage.warning('Please log in to write a review');
     return;
@@ -145,25 +158,20 @@ const submitReview = async () => {
 
   reviewSubmitting.value = true;
   try {
-    // Submit review (this will also update the rating)
-    await axios.post(`http://127.0.0.1:5000/api/movie/${movieId.value}/reviews`, {
+    await submitReview(movieId.value, {
       rating: userReview.value.rating,
       comment: userReview.value.comment.trim()
-    }, {
-      headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` }
     });
     
-    // Update local rating state
     userRating.value = userReview.value.rating;
     
-    // Auto-mark as watched (backend handles this, but update frontend state)
     const movieIdNum = Number(movieId.value);
     updateMovieStatus(movieIdNum, 'watched', true);
     
     ElMessage.success('Review submitted successfully');
     showReviewForm.value = false;
     userReview.value = { rating: 0, comment: '' };
-    await fetchMovieDetails(); // Refresh reviews
+    await fetchMovieDetails();
   } catch (err) {
     console.error('Error submitting review:', err);
     if (err.response?.data?.error) {
@@ -185,10 +193,165 @@ const showReviewFormHandler = () => {
   showReviewForm.value = true;
 };
 
+// Review interaction functions
+const toggleReviewLikeHandler = async (reviewId) => {
+  if (!isAuthenticated()) {
+    ElMessage.warning('Please log in to like reviews');
+    return;
+  }
+  
+  try {
+    const result = await toggleReviewLike(reviewId);
+    const reviewIndex = reviews.value.findIndex(r => r.id === reviewId);
+    if (reviewIndex !== -1) {
+      reviews.value[reviewIndex].user_has_liked = result.liked;
+      reviews.value[reviewIndex].like_count = result.like_count;
+    }
+    ElMessage.success(result.liked ? 'Review liked' : 'Review unliked');
+  } catch (error) {
+    console.error('Error toggling review like:', error);
+    ElMessage.error('Failed to update like status');
+  }
+};
+
+const toggleCommentForm = (reviewId) => {
+  if (!isAuthenticated()) {
+    ElMessage.warning('Please log in to comment');
+    return;
+  }
+  
+  showCommentForms.value[reviewId] = !showCommentForms.value[reviewId];
+};
+
+const submitComment = async (reviewId) => {
+  const commentText = commentTexts.value[reviewId];
+  if (!commentText || !commentText.trim()) {
+    ElMessage.warning('Please enter a comment');
+    return;
+  }
+
+  try {
+    const newComment = await addReviewComment(reviewId, commentText.trim());
+
+    if (!reviewComments.value[reviewId]) {
+      reviewComments.value[reviewId] = [];
+    }
+    reviewComments.value[reviewId].push(newComment);
+
+    const reviewIndex = reviews.value.findIndex(r => r.id === reviewId);
+    if (reviewIndex !== -1) {
+      reviews.value[reviewIndex].comment_count = (reviews.value[reviewIndex].comment_count || 0) + 1;
+    }
+
+    commentTexts.value[reviewId] = '';
+    ElMessage.success('Comment added successfully');
+  } catch (error) {
+    console.error('Error submitting comment:', error);
+    ElMessage.error('Failed to submit comment');
+  }
+};
+
+// Review management functions
+const editReview = (review) => {
+  editingReviewId.value = review.id;
+  editReviewData.value = {
+    rating: review.rating,
+    comment: review.comment || ''
+  };
+};
+
+const saveEditReview = async (reviewId) => {
+  if (editReviewData.value.rating === 0) {
+    ElMessage.warning('Please select a rating');
+    return;
+  }
+
+  try {
+    const updatedReview = await updateReview(reviewId, {
+      rating: editReviewData.value.rating,
+      comment: editReviewData.value.comment.trim()
+    });
+
+    const reviewIndex = reviews.value.findIndex(r => r.id === reviewId);
+    if (reviewIndex !== -1) {
+      reviews.value[reviewIndex] = { ...reviews.value[reviewIndex], ...updatedReview };
+    }
+
+    editingReviewId.value = null;
+    editReviewData.value = { rating: 0, comment: '' };
+    
+    ElMessage.success('Review updated successfully');
+  } catch (error) {
+    console.error('Error updating review:', error);
+    ElMessage.error('Failed to update review');
+  }
+};
+
+const cancelEditReview = () => {
+  editingReviewId.value = null;
+  editReviewData.value = { rating: 0, comment: '' };
+};
+
+const confirmDeleteReview = async (reviewId) => {
+  try {
+    await ElMessageBox.confirm(
+      'Are you sure you want to delete this review? This action cannot be undone.',
+      'Delete Review',
+      {
+        confirmButtonText: 'Delete',
+        cancelButtonText: 'Cancel',
+        type: 'warning',
+      }
+    );
+    
+    await deleteReview(reviewId);
+    
+    reviews.value = reviews.value.filter(r => r.id !== reviewId);
+    
+    ElMessage.success('Review deleted successfully');
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('Error deleting review:', error);
+      ElMessage.error('Failed to delete review');
+    }
+  }
+};
+
+// Check if user came from profile page to edit a review
+const checkEditReviewIntent = async () => {
+  const editIntent = sessionStorage.getItem('editReviewIntent');
+  if (editIntent === 'true' && isAuthenticated()) {
+    // Clear the intent flag
+    sessionStorage.removeItem('editReviewIntent');
+    
+    // Wait a bit for reviews to load
+    setTimeout(() => {
+      const currentUserName = getCurrentUser()?.username;
+      if (currentUserName && reviews.value.length > 0) {
+        // Find user's review
+        const userReviewObj = reviews.value.find(review => review.author === currentUserName);
+        if (userReviewObj) {
+          // Automatically start editing the user's review
+          editReview(userReviewObj);
+          
+          // Scroll to reviews section
+          const reviewsSection = document.querySelector('.reviews-section');
+          if (reviewsSection) {
+            reviewsSection.scrollIntoView({ behavior: 'smooth' });
+          }
+          
+          ElMessage.info('Edit mode activated for your review');
+        }
+      }
+    }, 1000); // Wait 1 second for data to load
+  }
+};
+
 onMounted(() => {
   checkAuthentication();
   fetchMovieDetails();
   loadUserRating();
+  checkEditReviewIntent();
 });
 </script>
 
@@ -286,15 +449,17 @@ onMounted(() => {
                   </span>
                 </div>
 
-                <div class="action-buttons">
-                  <el-button @click="showReviewFormHandler" class="review-btn">
-                    <el-icon><MessageBox /></el-icon>
-                    {{ isAuthenticated() ? 'Write a Review' : 'Login to Review' }}
-                  </el-button>
-                  <el-button @click="toggleWatchlistHandler" class="watchlist-btn">
-                    <el-icon><StarFilled /></el-icon>
-                    {{ isInWatchlist ? 'Remove from Watchlist' : 'Add to Watchlist' }}
-                  </el-button>
+                <div class="action-buttons-container">
+                  <div class="action-buttons">
+                    <el-button @click="showReviewFormHandler" class="review-btn highlighted-btn">
+                      <el-icon><MessageBox /></el-icon>
+                      {{ isAuthenticated() ? 'Write a Review' : 'Login to Review' }}
+                    </el-button>
+                    <el-button @click="toggleWatchlistHandler" class="watchlist-btn highlighted-btn">
+                      <el-icon><StarFilled /></el-icon>
+                      {{ isInWatchlist ? 'Remove from Watchlist' : 'Add to Watchlist' }}
+                    </el-button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -337,7 +502,7 @@ onMounted(() => {
               </el-form-item>
 
               <el-form-item>
-                <el-button @click="submitReview" :loading="reviewSubmitting" class="submit-btn">
+                <el-button @click="submitUserReview" :loading="reviewSubmitting" class="submit-btn">
                   Submit Review
                 </el-button>
                 <el-button @click="showReviewForm = false" class="cancel-btn">Cancel</el-button>
@@ -347,28 +512,124 @@ onMounted(() => {
 
           <!-- Reviews List -->
           <div v-if="reviews.length" class="reviews-list">
-            <div v-for="(review, index) in reviews" :key="index" class="review-card">
+            <div v-for="(review, index) in reviews" :key="review.id || index" class="review-card">
               <div class="review-header">
-                <h4>{{ review.author }}</h4>
-                <div class="review-rating" v-if="review.author_details && review.author_details.rating">
-                  <el-icon><StarFilled /></el-icon>
-                  <span>{{ review.author_details.rating }}</span>
+                <div class="review-author-section">
+                  <h4>{{ review.author }}</h4>
+                  <div class="review-rating" v-if="review.rating">
+                    <el-icon><StarFilled /></el-icon>
+                    <span>{{ review.rating }}/5</span>
+                  </div>
+                </div>
+                
+                <!-- Edit/Delete buttons for own reviews -->
+                <div v-if="currentUser && currentUser.username === review.author" class="review-management">
+                  <el-button size="small" @click="editReview(review)" type="primary" link>
+                    <el-icon><Edit /></el-icon>
+                    Edit
+                  </el-button>
+                  <el-button size="small" @click="confirmDeleteReview(review.id)" type="danger" link>
+                    <el-icon><Delete /></el-icon>
+                    Delete
+                  </el-button>
                 </div>
               </div>
 
               <div class="review-date" v-if="review.created_at">
                 {{ new Date(review.created_at).toLocaleDateString() }}
+                <span v-if="review.updated_at && review.updated_at !== review.created_at" class="updated-tag">
+                  (Updated: {{ new Date(review.updated_at).toLocaleDateString() }})
+                </span>
               </div>
 
-              <div class="review-content">
-                <p>{{ review.content }}</p>
+              <!-- Regular review content -->
+              <div v-if="editingReviewId !== review.id" class="review-content">
+                <p v-if="review.comment">{{ review.comment }}</p>
+                <p v-else-if="review.content">{{ review.content }}</p>
+              </div>
+
+              <!-- Edit review form -->
+              <div v-else class="edit-review-form">
+                <el-form>
+                  <el-form-item label="Rating">
+                    <el-rate 
+                      v-model="editReviewData.rating" 
+                      :max="5" 
+                      text-color="var(--rating-color)"
+                      void-color="var(--border-color)"
+                      :size="20"
+                    />
+                  </el-form-item>
+
+                  <el-form-item label="Review">
+                    <el-input 
+                      v-model="editReviewData.comment" 
+                      type="textarea" 
+                      :rows="3" 
+                      placeholder="Update your review..."
+                    />
+                  </el-form-item>
+
+                  <el-form-item>
+                    <el-button @click="saveEditReview(review.id)" type="primary" size="small">
+                      Save Changes
+                    </el-button>
+                    <el-button @click="cancelEditReview" size="small">
+                      Cancel
+                    </el-button>
+                  </el-form-item>
+                </el-form>
+              </div>
+
+              <!-- Review Actions -->
+              <div v-if="editingReviewId !== review.id" class="review-actions">
+                <el-button 
+                  :type="review.user_has_liked ? 'primary' : 'default'"
+                  size="small"
+                  @click="toggleReviewLikeHandler(review.id)"
+                  class="action-btn"
+                >
+                  <el-icon><StarFilled /></el-icon>
+                  <span>{{ review.like_count || 0 }}</span>
+                </el-button>
+
+                <el-button 
+                  size="small"
+                  @click="toggleCommentForm(review.id)"
+                  class="action-btn"
+                >
+                  <el-icon><MessageBox /></el-icon>
+                  <span>{{ review.comment_count || 0 }}</span>
+                </el-button>
+              </div>
+
+              <!-- Comments Section -->
+              <div v-if="showCommentForms[review.id]" class="comments-section">
+                <!-- Add Comment Form -->
+                <div class="add-comment-form">
+                  <el-input
+                    v-model="commentTexts[review.id]"
+                    type="textarea"
+                    :rows="2"
+                    placeholder="Write a comment..."
+                    class="comment-input"
+                  />
+                  <div class="comment-actions">
+                    <el-button size="small" @click="submitComment(review.id)" type="primary">
+                      Post Comment
+                    </el-button>
+                    <el-button size="small" @click="showCommentForms[review.id] = false">
+                      Cancel
+                    </el-button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
 
           <div v-else class="no-reviews">
             <p>No reviews yet. Be the first to review this movie!</p>
-            <el-button @click="showReviewFormHandler" class="review-btn">
+            <el-button @click="showReviewFormHandler" class="review-btn highlighted-btn featured-btn">
               {{ isAuthenticated() ? 'Write a Review' : 'Login to Review' }}
             </el-button>
           </div>
@@ -510,9 +771,20 @@ onMounted(() => {
   text-decoration: underline;
 }
 
+.action-buttons-container {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1.5rem;
+}
+
 .action-buttons {
   display: flex;
   gap: 1rem;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 1rem 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(8px);
 }
 
 .review-btn, .watchlist-btn, .submit-btn, .cancel-btn {
@@ -520,16 +792,58 @@ onMounted(() => {
   color: var(--text-color);
   border: 1px solid var(--border-color);
   transition: all 0.3s ease;
+  opacity: 0.8;
 }
 
 .review-btn:hover, .watchlist-btn:hover, .submit-btn:hover {
   background: var(--hover-color);
-  border-color: var(--secondary-color);
+  border-color: var(--text-color);
+  opacity: 1;
 }
 
 .cancel-btn:hover {
   background: var(--hover-color);
   border-color: var(--border-color);
+  opacity: 1;
+}
+
+/* Highlighted buttons for movie info section */
+.highlighted-btn {
+  background: #2c3e50 !important;
+  color: white !important;
+  border: 2px solid #34495e !important;
+  font-weight: 600 !important;
+  padding: 12px 24px !important;
+  border-radius: 8px !important;
+  opacity: 1 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.highlighted-btn:hover {
+  background: #34495e !important;
+  border-color: #2c3e50 !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* Featured button for reviews section */
+.featured-btn {
+  background: #2c3e50 !important;
+  color: white !important;
+  border: 2px solid #34495e !important;
+  font-weight: 600 !important;
+  padding: 14px 28px !important;
+  border-radius: 10px !important;
+  font-size: 1.1rem !important;
+  margin-top: 1rem !important;
+  box-shadow: 0 4px 12px rgba(44, 62, 80, 0.3);
+}
+
+.featured-btn:hover {
+  background: #34495e !important;
+  border-color: #2c3e50 !important;
+  transform: translateY(-3px);
+  box-shadow: 0 6px 16px rgba(44, 62, 80, 0.4);
 }
 
 .section-header {
@@ -585,11 +899,103 @@ onMounted(() => {
   line-height: 1.6;
 }
 
+/* Review management styles */
+.review-author-section {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.review-management {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.review-management .el-button {
+  font-size: 0.8rem;
+  padding: 0.25rem 0.5rem;
+}
+
+.updated-tag {
+  font-size: 0.8rem;
+  opacity: 0.6;
+  font-style: italic;
+}
+
+.edit-review-form {
+  margin: 1rem 0;
+  padding: 1rem;
+  background-color: var(--hover-color);
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+}
+
+.edit-review-form .el-form-item {
+  margin-bottom: 1rem;
+}
+
+.edit-review-form .el-rate {
+  font-size: 20px;
+}
+
+.edit-review-form .el-button {
+  margin-right: 0.5rem;
+}
+
+/* Review interaction styles */
+.review-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.action-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.875rem;
+}
+
+.action-btn .el-icon {
+  font-size: 16px;
+}
+
+.comments-section {
+  margin-top: 1rem;
+  padding: 1rem;
+  background-color: var(--hover-color);
+  border-radius: 8px;
+}
+
+.add-comment-form {
+  margin-top: 1rem;
+}
+
+.comment-input {
+  margin-bottom: 0.75rem;
+}
+
+.comment-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
 .no-reviews {
   text-align: center;
-  padding: 2rem;
+  padding: 3rem 2rem;
   background-color: var(--card-bg);
-  border-radius: 8px;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.no-reviews p {
+  font-size: 1.1rem;
+  color: var(--text-color);
+  margin-bottom: 1.5rem;
+  opacity: 0.8;
 }
 
 .review-form {

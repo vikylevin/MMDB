@@ -146,3 +146,38 @@ export const toggleFavorite = async (movieId) => {
   const response = await api.post('/user/favorites', { movie_id: id });
   return response.data;
 };
+
+// Review comment management
+export const addReviewComment = async (reviewId, comment) => {
+  const response = await api.post(`/movie/reviews/${reviewId}/comments`, { comment });
+  return response.data;
+};
+
+// Toggle review like
+export const toggleReviewLike = async (reviewId) => {
+  const response = await api.post(`/movie/reviews/${reviewId}/like`);
+  return response.data;
+};
+
+// Review management
+export const updateReview = async (reviewId, reviewData) => {
+  const response = await api.put(`/movie/reviews/${reviewId}`, reviewData);
+  return response.data;
+};
+
+export const deleteReview = async (reviewId) => {
+  const response = await api.delete(`/movie/reviews/${reviewId}`);
+  return response.data;
+};
+
+// Submit a review for a movie
+export const submitReview = async (movieId, reviewData) => {
+  const response = await api.post(`/movie/${movieId}/reviews`, reviewData);
+  return response.data;
+};
+
+// Get reviews for a movie
+export const getMovieReviews = async (movieId) => {
+  const response = await api.get(`/movie/${movieId}/reviews`);
+  return response.data;
+};

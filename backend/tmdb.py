@@ -103,47 +103,38 @@ def get_top_rated_movies(page=1, with_genres=None, vote_average_gte=None, vote_a
         print(f"Error fetching top rated movies: {e}")
         return None
 
-def get_upcoming_movies(page=1, with_genres=None, vote_average_gte=None, vote_average_lte=None, with_original_language=None):
-    """Get upcoming movies list with filters"""
+def get_upcoming_movies(page=1, with_genres=None, vote_average_gte=None, vote_average_lte=None, with_original_language=None, region=None):
+    """Get upcoming movies list with filters and region-specific releases"""
     try:
-        # If filters are provided, use discover endpoint
-        if with_genres or vote_average_gte or vote_average_lte or with_original_language:
-            from datetime import datetime
+        from datetime import datetime
+        
+        # Always use discover endpoint to ensure proper date filtering
+        params = {
+            'api_key': TMDB_API_KEY,
+            'language': 'en-US',
+            'page': page,
+            'primary_release_date.gte': datetime.now().strftime('%Y-%m-%d'),
+            'sort_by': 'primary_release_date.asc'
+        }
+        
+        # Add region parameter for region-specific releases
+        if region:
+            params['region'] = region
+        
+        # Add filters if provided
+        if with_genres:
+            params['with_genres'] = with_genres
+        if vote_average_gte:
+            params['vote_average.gte'] = vote_average_gte
+        if vote_average_lte:
+            params['vote_average.lte'] = vote_average_lte
+        if with_original_language:
+            params['with_original_language'] = with_original_language
             
-            params = {
-                'api_key': TMDB_API_KEY,
-                'language': 'en-US',
-                'page': page,
-                'primary_release_date.gte': datetime.now().strftime('%Y-%m-%d'),
-                'sort_by': 'primary_release_date.asc'
-            }
-            
-            # Add filters if provided
-            if with_genres:
-                params['with_genres'] = with_genres
-            if vote_average_gte:
-                params['vote_average.gte'] = vote_average_gte
-            if vote_average_lte:
-                params['vote_average.lte'] = vote_average_lte
-            if with_original_language:
-                params['with_original_language'] = with_original_language
-                
-            response = requests.get(
-                f'{TMDB_BASE_URL}/discover/movie',
-                params=params
-            )
-        else:
-            # Use standard upcoming endpoint for better pagination
-            params = {
-                'api_key': TMDB_API_KEY,
-                'language': 'en-US',
-                'page': page
-            }
-            
-            response = requests.get(
-                f'{TMDB_BASE_URL}/movie/upcoming',
-                params=params
-            )
+        response = requests.get(
+            f'{TMDB_BASE_URL}/discover/movie',
+            params=params
+        )
             
         response.raise_for_status()
         return response.json()

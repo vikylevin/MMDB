@@ -332,14 +332,18 @@
         <div v-if="activeTab === 'reviews'">
           <div v-if="userReviews.length" class="reviews-grid">
             <div v-for="review in userReviews" :key="review.id || review.movie_id" class="review-card">
-              <div class="review-movie-poster">
+              <div class="review-movie-poster" @click="goToMovieDetail(review.movie_id)">
                 <img 
                   :src="review.movie_poster ? `https://image.tmdb.org/t/p/w200${review.movie_poster}` : '/placeholder-poster.jpg'" 
                   :alt="review.movie_title" 
                 />
+                <div class="poster-overlay">
+                  <el-icon><Star /></el-icon>
+                  <span>View Movie</span>
+                </div>
               </div>
               <div class="review-content">
-                <h4 class="movie-title">{{ review.movie_title }}</h4>
+                <h4 class="movie-title" @click="goToMovieDetail(review.movie_id)">{{ review.movie_title }}</h4>
                 <div class="review-rating">
                   <el-rate 
                     :model-value="review.rating" 
@@ -358,6 +362,16 @@
                 <div v-if="review.created_at" class="review-date">
                   {{ formatDate(review.created_at) }}
                 </div>
+                <div class="review-actions">
+                  <el-button 
+                    size="small" 
+                    type="primary" 
+                    @click="goToMovieDetailAndEdit(review.movie_id)"
+                    :icon="Edit"
+                  >
+                    Edit Review
+                  </el-button>
+                </div>
               </div>
             </div>
           </div>
@@ -374,11 +388,14 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { useRouter } from 'vue-router';
 import { User, Star, Clock, Check, DataAnalysis, PieChart, Edit, Close } from '@element-plus/icons-vue';
 import { getFavorites, getWatchlist, getWatched, getUserReviews } from '../services/api';
 import ProfileMovieCard from '../components/ProfileMovieCard.vue';
 import { ElMessage } from 'element-plus';
 import { initializeMovieStatus } from '../stores/movieStatus';
+
+const router = useRouter();
 
 // Data
 const user = ref(null);
@@ -578,6 +595,21 @@ const handleTabChange = (tabName) => {
     loadUserReviews();
   } else {
     stopReviewsRefresh();
+  }
+};
+
+// Navigation functions for movie reviews
+const goToMovieDetail = (movieId) => {
+  if (movieId) {
+    router.push(`/movie/${movieId}`);
+  }
+};
+
+const goToMovieDetailAndEdit = (movieId) => {
+  if (movieId) {
+    // Navigate to movie detail page and store intent to edit review
+    sessionStorage.setItem('editReviewIntent', 'true');
+    router.push(`/movie/${movieId}`);
   }
 };
 
@@ -953,12 +985,50 @@ onMounted(() => {
   height: 120px;
   border-radius: 4px;
   overflow: hidden;
+  position: relative;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.review-movie-poster:hover {
+  transform: scale(1.05);
 }
 
 .review-movie-poster img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transition: all 0.3s ease;
+}
+
+.review-movie-poster:hover img {
+  filter: brightness(0.7);
+}
+
+.poster-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 0.8rem;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.review-movie-poster:hover .poster-overlay {
+  opacity: 1;
+}
+
+.poster-overlay .el-icon {
+  font-size: 20px;
+  margin-bottom: 4px;
 }
 
 .review-content {
@@ -973,6 +1043,13 @@ onMounted(() => {
   color: var(--text-color);
   font-size: 1.1rem;
   font-weight: 600;
+  cursor: pointer;
+  transition: color 0.3s ease;
+}
+
+.movie-title:hover {
+  color: var(--rating-color);
+  text-decoration: underline;
 }
 
 .review-rating {
@@ -1006,6 +1083,16 @@ onMounted(() => {
   color: var(--light-text);
   font-size: 0.8rem;
   margin-top: auto;
+}
+
+.review-actions {
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.review-actions .el-button {
+  font-size: 0.85rem;
 }
 
 /* Responsive design */
