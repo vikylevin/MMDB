@@ -1,6 +1,6 @@
 <template>
   <div class="profile-container">
-    <!-- 个人信息模块 -->
+    <!-- personal information module -->
     <el-card class="profile-info-card">
       <template #header>
         <div class="card-header">
@@ -89,12 +89,12 @@
           <h4>Movie Preferences</h4>
           <div class="info-grid">
             <div class="info-item">
-              <label>Favorite Genres:</label>
+              <label>Preferred Genres:</label>
               <el-select
                 v-if="isEditing"
-                v-model="userProfile.favoriteGenres"
+                v-model="userProfile.likedGenres"
                 multiple
-                placeholder="Select your favorite genres"
+                placeholder="Select your preferred genres"
                 style="width: 100%"
               >
                 <el-option
@@ -106,33 +106,33 @@
               </el-select>
               <div v-else class="genre-tags">
                 <el-tag 
-                  v-for="genre in userProfile.favoriteGenres" 
+                  v-for="genre in userProfile.likedGenres" 
                   :key="genre" 
                   size="small"
                   class="genre-tag"
                 >
                   {{ genre }}
                 </el-tag>
-                <span v-if="!userProfile.favoriteGenres?.length">Not specified</span>
+                <span v-if="!userProfile.likedGenres?.length">Not specified</span>
               </div>
             </div>
             <div class="info-item">
-              <label>Favorite Director:</label>
+              <label>Preferred Director:</label>
               <el-input 
                 v-if="isEditing" 
-                v-model="userProfile.favoriteDirector" 
-                placeholder="Your favorite director"
+                v-model="userProfile.likedDirector" 
+                placeholder="Your preferred director"
               />
-              <span v-else>{{ userProfile.favoriteDirector || 'Not specified' }}</span>
+              <span v-else>{{ userProfile.likedDirector || 'Not specified' }}</span>
             </div>
             <div class="info-item">
-              <label>Favorite Actor:</label>
+              <label>Preferred Actor:</label>
               <el-input 
                 v-if="isEditing" 
-                v-model="userProfile.favoriteActor" 
-                placeholder="Your favorite actor"
+                v-model="userProfile.likedActor" 
+                placeholder="Your preferred actor"
               />
-              <span v-else>{{ userProfile.favoriteActor || 'Not specified' }}</span>
+              <span v-else>{{ userProfile.likedActor || 'Not specified' }}</span>
             </div>
           </div>
         </div>
@@ -170,7 +170,7 @@
       </div>
     </el-card>
 
-    <!-- 汇总统计模块 -->
+    <!-- summary statistics module -->
     <el-card class="stats-card">
       <template #header>
         <div class="card-header">
@@ -185,21 +185,21 @@
             <el-icon><Star /></el-icon>
           </div>
           <div class="stat-content">
-            <div class="stat-number">{{ favorites.length }}</div>
+            <div class="stat-number">{{ likes.length }}</div>
             <div class="stat-label">Liked Movies</div>
           </div>
-          <el-button text @click="activeTab = 'favorites'">View All</el-button>
+          <el-button text @click="activeTab = 'likes'">View All</el-button>
         </div>
         
-        <div class="stat-item watchlist">
+        <div class="stat-item watch-later">
           <div class="stat-icon">
             <el-icon><Clock /></el-icon>
           </div>
           <div class="stat-content">
-            <div class="stat-number">{{ watchlist.length }}</div>
+            <div class="stat-number">{{ watchLater.length }}</div>
             <div class="stat-label">Watch Later</div>
           </div>
-          <el-button text @click="activeTab = 'watchlist'">View All</el-button>
+          <el-button text @click="activeTab = 'watch-later'">View All</el-button>
         </div>
         
         <div class="stat-item watched">
@@ -224,51 +224,50 @@
           <el-button text @click="activeTab = 'reviews'">View All</el-button>
         </div>
       </div>
-    </el-card>
-
-    <!-- 观影分析模块 -->
-    <el-card class="analysis-card">
-      <template #header>
-        <div class="card-header">
-          <el-icon><PieChart /></el-icon>
-          <span>Viewing Analysis</span>
-        </div>
-      </template>
       
-      <div class="analysis-content">
+      <!-- Viewing Analysis moved here under stats -->
+      <div class="analysis-section">
+        <h4 class="analysis-title">
+          <el-icon><PieChart /></el-icon>
+          Viewing Analysis
+        </h4>
         <div class="genre-analysis">
-          <h4>Favorite Genres</h4>
+          <h5>Liked Movies by Genre</h5>
           <div class="genre-stats" v-if="genreStats.length">
-            <div v-for="genre in genreStats.slice(0, 8)" :key="genre.name" class="genre-item">
+            <div v-for="genre in genreStats.slice(0, 10)" :key="genre.name" class="genre-item">
               <span class="genre-name">{{ genre.name }}</span>
               <div class="genre-bar">
-                <div class="genre-fill" :style="{ width: (genre.count / genreStats[0].count * 100) + '%' }"></div>
+                <div class="genre-fill" :style="{ 
+                  width: (genre.count / genreStats[0].count * 100) + '%',
+                  height: '20px',
+                  background: `linear-gradient(135deg, #FFD700 0%, #FFA500 100%)`
+                }"></div>
               </div>
               <span class="genre-count">{{ genre.count }}</span>
             </div>
           </div>
-          <p v-else class="no-data">Watch more movies to see your favorite genres</p>
+          <p v-else class="no-data">Like more movies to see your preferred genres</p>
         </div>
       </div>
     </el-card>
 
-    <!-- 电影列表标签页 -->
+    <!-- movie list tabs -->
     <el-card class="movies-card">
       <template #header>
         <el-tabs v-model="activeTab" class="profile-tabs" @tab-change="handleTabChange">
-          <el-tab-pane label="Liked Movies" name="favorites">
+          <el-tab-pane label="Liked Movies" name="likes">
             <template #label>
               <span class="tab-label">
                 <el-icon><Star /></el-icon>
-                Liked ({{ favorites.length }})
+                Liked ({{ likes.length }})
               </span>
             </template>
           </el-tab-pane>
-          <el-tab-pane label="Watch Later" name="watchlist">
+          <el-tab-pane label="Watch Later" name="watch-later">
             <template #label>
               <span class="tab-label">
                 <el-icon><Clock /></el-icon>
-                Watch Later ({{ watchlist.length }})
+                Watch Later ({{ watchLater.length }})
               </span>
             </template>
           </el-tab-pane>
@@ -292,10 +291,10 @@
       </template>
       
       <div class="movies-content">
-        <!-- Favorites Tab -->
-        <div v-if="activeTab === 'favorites'">
-          <div v-if="favorites.length" class="movies-grid">
-            <ProfileMovieCard v-for="movie in favorites" :key="movie.id" :movie="movie" />
+        <!-- Liked Movies Tab -->
+        <div v-if="activeTab === 'likes'">
+          <div v-if="likes.length" class="movies-grid">
+            <ProfileMovieCard v-for="movie in likes" :key="movie.id" :movie="movie" />
           </div>
           <div v-else class="no-movies">
             <el-icon><Star /></el-icon>
@@ -304,10 +303,22 @@
           </div>
         </div>
         
-        <!-- Watchlist Tab -->
+        <!-- Watch Later Tab -->
+        <div v-if="activeTab === 'watch-later'">
+          <div v-if="watchLater.length" class="movies-grid">
+            <ProfileMovieCard v-for="movie in watchLater" :key="movie.id" :movie="movie" />
+          </div>
+          <div v-else class="no-movies">
+            <el-icon><Clock /></el-icon>
+            <p>No movies in watch later list</p>
+            <el-button @click="$router.push('/movies/popular')">Add Movies</el-button>
+          </div>
+        </div>
+
+        <!-- Backward compatibility - Watchlist Tab (alias) -->
         <div v-if="activeTab === 'watchlist'">
-          <div v-if="watchlist.length" class="movies-grid">
-            <ProfileMovieCard v-for="movie in watchlist" :key="movie.id" :movie="movie" />
+          <div v-if="watchLater.length" class="movies-grid">
+            <ProfileMovieCard v-for="movie in watchLater" :key="movie.id" :movie="movie" />
           </div>
           <div v-else class="no-movies">
             <el-icon><Clock /></el-icon>
@@ -338,7 +349,7 @@
                   :alt="review.movie_title" 
                 />
                 <div class="poster-overlay">
-                  <el-icon><Star /></el-icon>
+                  <el-icon><MoreFilled /></el-icon>
                   <span>View Movie</span>
                 </div>
               </div>
@@ -389,8 +400,8 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { User, Star, Clock, Check, DataAnalysis, PieChart, Edit, Close } from '@element-plus/icons-vue';
-import { getFavorites, getWatchlist, getWatched, getUserReviews } from '../services/api';
+import { User, Star, Clock, Check, DataAnalysis, PieChart, Edit, Close, MoreFilled } from '@element-plus/icons-vue';
+import { getLikes, getWatchLater, getWatched, getUserReviews } from '../services/api';
 import ProfileMovieCard from '../components/ProfileMovieCard.vue';
 import { ElMessage } from 'element-plus';
 import { initializeMovieStatus } from '../stores/movieStatus';
@@ -399,11 +410,14 @@ const router = useRouter();
 
 // Data
 const user = ref(null);
-const favorites = ref([]);
-const watchlist = ref([]);
+const likes = ref([]);
+const watchLater = ref([]);
+
+// Backward compatibility alias
+const watchlist = watchLater;
 const watched = ref([]);
 const userReviews = ref([]);
-const activeTab = ref('favorites');
+const activeTab = ref('likes');
 const isEditing = ref(false);
 const isSaving = ref(false);
 
@@ -414,9 +428,9 @@ const userProfile = ref({
   location: '',
   birthday: '',
   website: '',
-  favoriteGenres: [],
-  favoriteDirector: '',
-  favoriteActor: ''
+  likedGenres: [],
+  likedDirector: '',
+  likedActor: ''
 });
 
 // Available genres for selection
@@ -446,8 +460,8 @@ const availableGenres = ref([
 const genreStats = computed(() => {
   const genreMap = new Map();
   
-  // Count genres from watched movies only
-  watched.value.forEach(movie => {
+  // Count genres from liked movies only
+  likes.value.forEach(movie => {
     if (movie.genres) {
       movie.genres.forEach(genre => {
         genreMap.set(genre.name, (genreMap.get(genre.name) || 0) + 1);
@@ -520,27 +534,30 @@ const saveProfile = async () => {
   }
 };
 
-const loadFavorites = async () => {
+const loadLikes = async () => {
   try {
-    const response = await getFavorites();
+    const response = await getLikes();
     // Backend returns array directly, not wrapped in {data: ...}
-    favorites.value = Array.isArray(response) ? response : response.data || [];
+    likes.value = Array.isArray(response) ? response : response.data || [];
   } catch (error) {
-    console.error('Error loading favorites:', error);
-    ElMessage.error('Failed to load favorite movies');
+    console.error('Error loading likes:', error);
+    ElMessage.error('Failed to load liked movies');
   }
 };
 
-const loadWatchlist = async () => {
+const loadWatchLater = async () => {
   try {
-    const response = await getWatchlist();
+    const response = await getWatchLater();
     // Backend returns array directly, not wrapped in {data: ...}
-    watchlist.value = Array.isArray(response) ? response : response.data || [];
+    watchLater.value = Array.isArray(response) ? response : response.data || [];
   } catch (error) {
-    console.error('Error loading watchlist:', error);
-    ElMessage.error('Failed to load watchlist');
+    console.error('Error loading watch later:', error);
+    ElMessage.error('Failed to load watch later');
   }
 };
+
+// Backward compatibility alias
+const loadWatchlist = loadWatchLater;
 
 const loadWatched = async () => {
   try {
@@ -615,14 +632,14 @@ const goToMovieDetailAndEdit = (movieId) => {
 
 const loadAllData = async () => {
   await Promise.all([
-    loadFavorites(),
-    loadWatchlist(),
+    loadLikes(),
+    loadWatchLater(),
     loadWatched(),
     loadUserReviews()
   ]);
   
   // Initialize global movie status
-  initializeMovieStatus(favorites.value, watchlist.value, watched.value);
+  initializeMovieStatus(likes.value, watchLater.value, watched.value);
 };
 
 onMounted(() => {
@@ -767,7 +784,7 @@ onMounted(() => {
   color: var(--light-text);
 }
 
-/* 统计卡片 */
+/* stats card */
 .stats-card {
   background: var(--card-bg);
   border: 1px solid var(--border-color);
@@ -777,6 +794,7 @@ onMounted(() => {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 1.5rem;
+  margin-bottom: 2rem;
 }
 
 .stat-item {
@@ -810,6 +828,12 @@ onMounted(() => {
   color: var(--rating-color);
 }
 
+.stat-item.watch-later .stat-icon {
+  background: rgba(102, 102, 102, 0.1);
+  color: var(--secondary-color);
+}
+
+/* Backward compatibility */
 .stat-item.watchlist .stat-icon {
   background: rgba(102, 102, 102, 0.1);
   color: var(--secondary-color);
@@ -842,56 +866,101 @@ onMounted(() => {
   margin-top: 0.25rem;
 }
 
-/* 分析卡片 */
-.analysis-card {
-  background: var(--card-bg);
-  border: 1px solid var(--border-color);
+/* Analysis section within stats card */
+.analysis-section {
+  border-top: 2px solid var(--border-color);
+  padding-top: 2rem;
 }
 
-.analysis-content {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 2rem;
+.analysis-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 1.5rem 0;
+  color: var(--text-color);
+  font-weight: 600;
+  font-size: 1.2rem;
 }
 
-.analysis-content h4 {
+.genre-analysis {
+  width: 100%;
+}
+
+.genre-analysis h5 {
   margin: 0 0 1rem 0;
   color: var(--text-color);
   font-weight: 600;
+  font-size: 1rem;
 }
 
 .genre-item {
   display: flex;
   align-items: center;
   gap: 1rem;
-  margin-bottom: 0.75rem;
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  background: var(--background-color);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.genre-item:hover {
+  background: var(--hover-color);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .genre-name {
-  min-width: 80px;
-  font-size: 0.875rem;
+  min-width: 120px;
+  font-size: 0.9rem;
   color: var(--text-color);
+  font-weight: 600;
 }
 
 .genre-bar {
   flex: 1;
-  height: 8px;
+  height: 20px;
   background: var(--border-color);
-  border-radius: 4px;
+  border-radius: 10px;
   overflow: hidden;
+  position: relative;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .genre-fill {
   height: 100%;
-  background: var(--secondary-color);
-  transition: width 0.3s ease;
+  background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+  transition: all 0.4s ease;
+  border-radius: 10px;
+  position: relative;
+  overflow: hidden;
+}
+
+.genre-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, 
+    rgba(255, 255, 255, 0.3) 0%, 
+    rgba(255, 255, 255, 0.1) 50%, 
+    rgba(255, 255, 255, 0.3) 100%);
+  border-radius: 10px;
 }
 
 .genre-count {
-  min-width: 30px;
+  min-width: 40px;
   text-align: right;
-  font-size: 0.875rem;
-  color: var(--light-text);
+  font-size: 0.9rem;
+  color: var(--text-color);
+  font-weight: 600;
+  background: var(--card-bg);
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  border: 1px solid var(--border-color);
 }
 
 .rating-item {
@@ -913,7 +982,7 @@ onMounted(() => {
   font-style: italic;
 }
 
-/* 电影列表卡片 */
+/* movie list card */
 .movies-card {
   background: var(--card-bg);
   border: 1px solid var(--border-color);
@@ -937,7 +1006,8 @@ onMounted(() => {
 .movies-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 1.5rem;
+  gap: 1rem;
+  justify-items: center;
 }
 
 .no-movies {
@@ -1116,7 +1186,8 @@ onMounted(() => {
   }
   
   .movies-grid {
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 0.8rem;
   }
   
   .edit-actions {

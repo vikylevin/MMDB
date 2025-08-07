@@ -1,9 +1,9 @@
 import { ref, reactive } from 'vue';
 
-// Movie status store for tracking favorites, watchlist, and watched movies
+// Movie status store for tracking likes, watch later, and watched movies
 const movieStatus = reactive({
-  favorites: new Set(),
-  watchlist: new Set(),
+  likes: new Set(),
+  watchLater: new Set(),
   watched: new Set()
 });
 
@@ -13,21 +13,30 @@ const isInitialized = ref(false);
 // Methods to update status
 export const updateMovieStatus = (movieId, type, isActive) => {
   const id = Number(movieId);
+  // Handle legacy watchlist type
+  let statusType = type;
+  if (type === 'watchlist') {
+    statusType = 'watchLater';
+  }
+  
   if (isActive) {
-    movieStatus[type].add(id);
+    movieStatus[statusType].add(id);
   } else {
-    movieStatus[type].delete(id);
+    movieStatus[statusType].delete(id);
   }
 };
 
 // Methods to check status
-export const isMovieFavorite = (movieId) => {
-  return movieStatus.favorites.has(Number(movieId));
+export const isMovieLiked = (movieId) => {
+  return movieStatus.likes.has(Number(movieId));
 };
 
-export const isMovieInWatchlist = (movieId) => {
-  return movieStatus.watchlist.has(Number(movieId));
+export const isMovieInWatchLater = (movieId) => {
+  return movieStatus.watchLater.has(Number(movieId));
 };
+
+// Backward compatibility alias
+export const isMovieInWatchlist = isMovieInWatchLater;
 
 export const isMovieWatched = (movieId) => {
   return movieStatus.watched.has(Number(movieId));
@@ -39,19 +48,19 @@ export const isMovieStatusInitialized = () => {
 };
 
 // Initialize status from API
-export const initializeMovieStatus = (favorites = [], watchlist = [], watched = []) => {
+export const initializeMovieStatus = (likes = [], watchLater = [], watched = []) => {
   // Clear existing status
-  movieStatus.favorites.clear();
-  movieStatus.watchlist.clear();
+  movieStatus.likes.clear();
+  movieStatus.watchLater.clear();
   movieStatus.watched.clear();
   
   // Add movies to status sets
-  favorites.forEach(movie => {
-    movieStatus.favorites.add(Number(movie.tmdb_id || movie.id));
+  likes.forEach(movie => {
+    movieStatus.likes.add(Number(movie.tmdb_id || movie.id));
   });
   
-  watchlist.forEach(movie => {
-    movieStatus.watchlist.add(Number(movie.tmdb_id || movie.id));
+  watchLater.forEach(movie => {
+    movieStatus.watchLater.add(Number(movie.tmdb_id || movie.id));
   });
   
   watched.forEach(movie => {
@@ -64,8 +73,8 @@ export const initializeMovieStatus = (favorites = [], watchlist = [], watched = 
 
 // Clear initialization state (for logout)
 export const clearMovieStatus = () => {
-  movieStatus.favorites.clear();
-  movieStatus.watchlist.clear();
+  movieStatus.likes.clear();
+  movieStatus.watchLater.clear();
   movieStatus.watched.clear();
   isInitialized.value = false;
 };

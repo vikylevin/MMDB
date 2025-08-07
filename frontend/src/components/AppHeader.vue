@@ -4,12 +4,7 @@ import { Search, User, Menu, ArrowDown } from '@element-plus/icons-vue';
 import { useRouter } from 'vue-router';
 import { currentUser, setAuthState } from '../stores/auth';
 
-defineProps({
-  darkMode: Boolean
-});
-
 const router = useRouter();
-const emit = defineEmits(['toggle-dark-mode']);
 const searchQuery = ref('');
 const isMenuOpen = ref(false);
 const isSearchExpanded = ref(false);
@@ -127,11 +122,6 @@ const handleLogout = () => {
         </div>
 
         <div class="controls">
-          <el-button
-              circle
-              @click="emit('toggle-dark-mode')"
-              :icon="darkMode ? 'Sunny' : 'Moon'"
-          />
           <div class="user-menu">
             <template v-if="user">
               <el-dropdown trigger="click">
@@ -308,6 +298,23 @@ const handleLogout = () => {
 :deep(.el-button) {
   height: 32px;
   padding: 0 16px;
+}
+
+/* Login button styling for black/white/gray theme */
+:deep(.el-button--primary) {
+  background-color: #2c3e50 !important;
+  border-color: #34495e !important;
+  color: white !important;
+}
+
+:deep(.el-button--primary:hover) {
+  background-color: #34495e !important;
+  border-color: #2c3e50 !important;
+}
+
+:deep(.el-button--primary:focus) {
+  background-color: #2c3e50 !important;
+  border-color: #34495e !important;
 }
 </style>
 Please login to add movies to your watchlist

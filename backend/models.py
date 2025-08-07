@@ -13,26 +13,26 @@ class WatchedItem(db.Model):
         db.UniqueConstraint('user_id', 'movie_id', name='unique_user_movie_watched'),
     )
 
-# FavoriteItem model for tracking liked movies
-class FavoriteItem(db.Model):
-    __tablename__ = 'favorite_item'
+# LikedItem model for tracking liked movies
+class LikedItem(db.Model):
+    __tablename__ = 'liked_item'
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     movie_id = db.Column(db.Integer, nullable=False)  # TMDB id, no ForeignKey
     added_at = db.Column(db.DateTime, server_default=db.func.now())
     __table_args__ = (
-        db.UniqueConstraint('user_id', 'movie_id', name='unique_user_movie_favorite'),
+        db.UniqueConstraint('user_id', 'movie_id', name='unique_user_movie_liked'),
     )
 
-# WatchlistItem model for tracking watch later movies
-class WatchlistItem(db.Model):
-    __tablename__ = 'watchlist_item'
+# WatchLaterItem model for tracking watch later movies
+class WatchLaterItem(db.Model):
+    __tablename__ = 'watch_later_item'
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     movie_id = db.Column(db.Integer, nullable=False)  # TMDB id, no ForeignKey
     added_at = db.Column(db.DateTime, server_default=db.func.now())
     __table_args__ = (
-        db.UniqueConstraint('user_id', 'movie_id', name='unique_user_movie_watchlist'),
+        db.UniqueConstraint('user_id', 'movie_id', name='unique_user_movie_watch_later'),
     )
 
 # Movie model for storing movie details
@@ -48,7 +48,7 @@ class Movie(db.Model):
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
-    password_hash = db.Column(db.String(120), nullable=False)
+    password_hash = db.Column(db.String(255), nullable=False)  # Increased from 120 to 255 for modern password hashes
     email = db.Column(db.String(120), unique=True, nullable=False)
 
     def set_password(self, password):
@@ -105,8 +105,8 @@ class ReviewComment(db.Model):
 
 
 # Add relationships after all classes are defined
-User.watchlist_items = db.relationship('WatchlistItem', backref='user', lazy=True)
-User.favorite_items = db.relationship('FavoriteItem', backref='user', lazy=True)
+User.watch_later_items = db.relationship('WatchLaterItem', backref='user', lazy=True)
+User.liked_items = db.relationship('LikedItem', backref='user', lazy=True)
 User.watched_items = db.relationship('WatchedItem', backref='user', lazy=True)
 User.ratings = db.relationship('Rating', backref='user', lazy=True)
 User.reviews = db.relationship('Review', backref='user', lazy=True)

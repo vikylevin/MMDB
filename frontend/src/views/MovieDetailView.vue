@@ -3,10 +3,10 @@ import { ref, onMounted, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import axios from 'axios';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { Star, StarFilled, Clock, Calendar, MessageBox, Edit, Delete } from '@element-plus/icons-vue';
-import { isAuthenticated, getCurrentUser, rateMovie, getMovieRating, toggleWatchlist, toggleWatched,
-         submitReview, getMovieReviews, toggleReviewLike, addReviewComment, updateReview, deleteReview } from '../services/api';
-import { isMovieInWatchlist, updateMovieStatus, isMovieWatched } from '../stores/movieStatus';
+import { Star, StarFilled, Clock, Calendar, MessageBox, Edit, Delete, ChatDotRound, Check } from '@element-plus/icons-vue';
+import { isAuthenticated, getCurrentUser, rateMovie, getMovieRating, toggleWatchLater, toggleWatched, toggleLike,
+         submitReview, getMovieReviews, toggleReviewLike, addReviewComment, getReviewComments, updateReview, deleteReview } from '../services/api';
+import { isMovieInWatchLater, updateMovieStatus, isMovieWatched, isMovieLiked } from '../stores/movieStatus';
 
 const route = useRoute();
 const router = useRouter();
@@ -37,9 +37,17 @@ const reviewComments = ref({});
 const showCommentForms = ref({});
 const commentTexts = ref({});
 
-// Use global state for watchlist status
-const isInWatchlist = computed(() => {
-  return isMovieInWatchlist(Number(movieId.value));
+// Use global state for watch later status
+const isInWatchLater = computed(() => {
+  return isMovieInWatchLater(Number(movieId.value));
+});
+
+// Backward compatibility alias
+const isInWatchlist = isInWatchLater;
+
+// Use global state for like status
+const isLiked = computed(() => {
+  return isMovieLiked(Number(movieId.value));
 });
 
 const imageBaseUrl = 'https://image.tmdb.org/t/p/original';
@@ -94,20 +102,40 @@ const checkWatchlistStatus = async () => {
   // No longer needed as we use global state
 };
 
-const toggleWatchlistHandler = async () => {
+const toggleWatchLaterHandler = async () => {
   if (!isAuthenticated()) {
-    ElMessage.warning('Please log in to add movies to your watchlist');
+    ElMessage.warning('Please log in to add movies to your watch later list');
     return;
   }
 
   try {
-    const response = await toggleWatchlist(movieId.value);
+    const response = await toggleWatchLater(movieId.value);
     // Update global state
-    updateMovieStatus(Number(movieId.value), 'watchlist', response.added);
-    ElMessage.success(`Movie ${response.added ? 'added to' : 'removed from'} watchlist`);
+    updateMovieStatus(Number(movieId.value), 'watchLater', response.added);
+    ElMessage.success(`Movie ${response.added ? 'added to' : 'removed from'} watch later`);
   } catch (err) {
-    console.error('Error updating watchlist:', err);
-    ElMessage.error('Failed to update watchlist. Please try again later.');
+    console.error('Error updating watch later:', err);
+    ElMessage.error('Failed to update watch later. Please try again later.');
+  }
+};
+
+// Backward compatibility alias
+const toggleWatchlistHandler = toggleWatchLaterHandler;
+
+const toggleLikeHandler = async () => {
+  if (!isAuthenticated()) {
+    ElMessage.warning('Please log in to like movies');
+    return;
+  }
+
+  try {
+    const response = await toggleLike(movieId.value);
+    // Update global state
+    updateMovieStatus(Number(movieId.value), 'likes', response.added);
+    ElMessage.success(`Movie ${response.added ? 'liked' : 'unliked'}`);
+  } catch (err) {
+    console.error('Error updating like status:', err);
+    ElMessage.error('Failed to update like status. Please try again later.');
   }
 };
 
@@ -130,6 +158,17 @@ const fetchMovieDetails = async () => {
   } finally {
     loading.value = false;
   }
+};
+
+// Utility functions
+const formatDate = (dateString) => {
+  return new Date(dateString).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
 };
 
 const formatRuntime = (minutes) => {
@@ -214,13 +253,24 @@ const toggleReviewLikeHandler = async (reviewId) => {
   }
 };
 
-const toggleCommentForm = (reviewId) => {
+const toggleCommentForm = async (reviewId) => {
   if (!isAuthenticated()) {
     ElMessage.warning('Please log in to comment');
     return;
   }
   
   showCommentForms.value[reviewId] = !showCommentForms.value[reviewId];
+  
+  // Load comments when expanding
+  if (showCommentForms.value[reviewId] && !reviewComments.value[reviewId]) {
+    try {
+      const comments = await getReviewComments(reviewId);
+      reviewComments.value[reviewId] = comments;
+    } catch (error) {
+      console.error('Error loading comments:', error);
+      reviewComments.value[reviewId] = [];
+    }
+  }
 };
 
 const submitComment = async (reviewId) => {
@@ -451,14 +501,27 @@ onMounted(() => {
 
                 <div class="action-buttons-container">
                   <div class="action-buttons">
-                    <el-button @click="showReviewFormHandler" class="review-btn highlighted-btn">
-                      <el-icon><MessageBox /></el-icon>
-                      {{ isAuthenticated() ? 'Write a Review' : 'Login to Review' }}
-                    </el-button>
-                    <el-button @click="toggleWatchlistHandler" class="watchlist-btn highlighted-btn">
-                      <el-icon><StarFilled /></el-icon>
-                      {{ isInWatchlist ? 'Remove from Watchlist' : 'Add to Watchlist' }}
-                    </el-button>
+                    <el-tooltip content="Write a Review" placement="top">
+                      <el-button @click="showReviewFormHandler" class="review-btn highlighted-btn icon-only-btn">
+                        <el-icon><ChatDotRound /></el-icon>
+                      </el-button>
+                    </el-tooltip>
+                    <el-tooltip :content="isLiked ? 'Remove from Likes' : 'Add to Likes'" placement="top">
+                      <el-button @click="toggleLikeHandler" class="like-btn highlighted-btn icon-only-btn" :class="{ 'liked': isLiked }">
+                        <el-icon>
+                          <StarFilled v-if="isLiked" />
+                          <Star v-else />
+                        </el-icon>
+                      </el-button>
+                    </el-tooltip>
+                    <el-tooltip :content="isInWatchLater ? 'Remove from Watch Later' : 'Add to Watch Later'" placement="top">
+                      <el-button @click="toggleWatchLaterHandler" class="watch-later-btn highlighted-btn icon-only-btn" :class="{ 'added': isInWatchLater }">
+                        <el-icon>
+                          <Check v-if="isInWatchLater" />
+                          <Clock v-else />
+                        </el-icon>
+                      </el-button>
+                    </el-tooltip>
                   </div>
                 </div>
               </div>
@@ -502,10 +565,12 @@ onMounted(() => {
               </el-form-item>
 
               <el-form-item>
-                <el-button @click="submitUserReview" :loading="reviewSubmitting" class="submit-btn">
-                  Submit Review
-                </el-button>
-                <el-button @click="showReviewForm = false" class="cancel-btn">Cancel</el-button>
+                <div class="review-form-actions">
+                  <el-button @click="submitUserReview" :loading="reviewSubmitting" type="primary" class="submit-btn">
+                    Submit Review
+                  </el-button>
+                  <el-button @click="showReviewForm = false" class="cancel-btn">Cancel</el-button>
+                </div>
               </el-form-item>
             </el-form>
           </div>
@@ -517,8 +582,14 @@ onMounted(() => {
                 <div class="review-author-section">
                   <h4>{{ review.author }}</h4>
                   <div class="review-rating" v-if="review.rating">
-                    <el-icon><StarFilled /></el-icon>
-                    <span>{{ review.rating }}/5</span>
+                    <el-rate 
+                      :model-value="review.rating" 
+                      :max="5" 
+                      disabled 
+                      text-color="#ffce54"
+                      void-color="#e0e0e0"
+                      :size="18"
+                    />
                   </div>
                 </div>
                 
@@ -571,12 +642,14 @@ onMounted(() => {
                   </el-form-item>
 
                   <el-form-item>
-                    <el-button @click="saveEditReview(review.id)" type="primary" size="small">
-                      Save Changes
-                    </el-button>
-                    <el-button @click="cancelEditReview" size="small">
-                      Cancel
-                    </el-button>
+                    <div class="edit-review-actions">
+                      <el-button @click="saveEditReview(review.id)" type="primary" size="small" class="save-btn">
+                        Save Changes
+                      </el-button>
+                      <el-button @click="cancelEditReview" size="small" class="cancel-btn">
+                        Cancel
+                      </el-button>
+                    </div>
                   </el-form-item>
                 </el-form>
               </div>
@@ -587,24 +660,35 @@ onMounted(() => {
                   :type="review.user_has_liked ? 'primary' : 'default'"
                   size="small"
                   @click="toggleReviewLikeHandler(review.id)"
-                  class="action-btn"
+                  class="review-action-btn like-btn"
                 >
-                  <el-icon><StarFilled /></el-icon>
+                  <span class="heart-icon">♥</span>
                   <span>{{ review.like_count || 0 }}</span>
                 </el-button>
 
                 <el-button 
                   size="small"
                   @click="toggleCommentForm(review.id)"
-                  class="action-btn"
+                  class="review-action-btn comment-btn"
                 >
-                  <el-icon><MessageBox /></el-icon>
+                  <el-icon><ChatDotRound /></el-icon>
                   <span>{{ review.comment_count || 0 }}</span>
                 </el-button>
               </div>
 
               <!-- Comments Section -->
               <div v-if="showCommentForms[review.id]" class="comments-section">
+                <!-- Existing Comments -->
+                <div v-if="reviewComments[review.id] && reviewComments[review.id].length > 0" class="existing-comments">
+                  <div v-for="comment in reviewComments[review.id]" :key="comment.id" class="comment-item">
+                    <div class="comment-header">
+                      <span class="comment-author">{{ comment.username }}</span>
+                      <span class="comment-date">{{ formatDate(comment.created_at) }}</span>
+                    </div>
+                    <div class="comment-content">{{ comment.comment }}</div>
+                  </div>
+                </div>
+
                 <!-- Add Comment Form -->
                 <div class="add-comment-form">
                   <el-input
@@ -629,9 +713,6 @@ onMounted(() => {
 
           <div v-else class="no-reviews">
             <p>No reviews yet. Be the first to review this movie!</p>
-            <el-button @click="showReviewFormHandler" class="review-btn highlighted-btn featured-btn">
-              {{ isAuthenticated() ? 'Write a Review' : 'Login to Review' }}
-            </el-button>
           </div>
         </section>
       </div>
@@ -679,6 +760,7 @@ onMounted(() => {
 
 .movie-info {
   flex: 1;
+  position: relative;
 }
 
 .movie-info h1 {
@@ -780,14 +862,9 @@ onMounted(() => {
 .action-buttons {
   display: flex;
   gap: 1rem;
-  background: rgba(255, 255, 255, 0.95);
-  padding: 1rem 1.5rem;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  backdrop-filter: blur(8px);
 }
 
-.review-btn, .watchlist-btn, .submit-btn, .cancel-btn {
+.review-btn, .watch-later-btn {
   background: var(--card-bg);
   color: var(--text-color);
   border: 1px solid var(--border-color);
@@ -795,15 +872,9 @@ onMounted(() => {
   opacity: 0.8;
 }
 
-.review-btn:hover, .watchlist-btn:hover, .submit-btn:hover {
+.review-btn:hover, .watch-later-btn:hover {
   background: var(--hover-color);
   border-color: var(--text-color);
-  opacity: 1;
-}
-
-.cancel-btn:hover {
-  background: var(--hover-color);
-  border-color: var(--border-color);
   opacity: 1;
 }
 
@@ -824,6 +895,118 @@ onMounted(() => {
   border-color: #2c3e50 !important;
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* Icon-only button styling */
+.icon-only-btn {
+  width: 48px !important;
+  height: 48px !important;
+  padding: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 50% !important;
+}
+
+.icon-only-btn .el-icon {
+  font-size: 24px !important;
+}
+
+/* Specific button colors */
+.review-btn.icon-only-btn {
+  background: white !important;
+  border-color: #e9ecef !important;
+  color: #333333 !important;
+}
+
+.review-btn.icon-only-btn:hover {
+  background: #f8f9fa !important;
+  border-color: #333333 !important;
+  color: #333333 !important;
+}
+
+.like-btn.icon-only-btn {
+  background: white !important;
+  border-color: #e9ecef !important;
+  color: #333333 !important;
+}
+
+.like-btn.icon-only-btn:hover {
+  background: #f8f9fa !important;
+  border-color: #333333 !important;
+  color: #333333 !important;
+}
+
+.like-btn.icon-only-btn.liked {
+  background: #f39c12 !important;
+  border-color: #e67e22 !important;
+  color: white !important;
+}
+
+.like-btn.icon-only-btn.liked:hover {
+  background: #e67e22 !important;
+  border-color: #d35400 !important;
+  color: white !important;
+}
+
+/* Backward compatibility */
+.like-btn.icon-only-btn {
+  background: white !important;
+  border-color: #e9ecef !important;
+  color: #333333 !important;
+}
+
+.like-btn.icon-only-btn:hover {
+  background: #f8f9fa !important;
+  border-color: #333333 !important;
+  color: #333333 !important;
+}
+
+.like-btn.icon-only-btn.liked {
+  background: #f39c12 !important;
+  border-color: #e67e22 !important;
+  color: white !important;
+}
+
+.like-btn.icon-only-btn.liked:hover {
+  background: #e67e22 !important;
+  border-color: #d35400 !important;
+  color: white !important;
+}
+
+.watch-later-btn.icon-only-btn {
+  background: #27ae60 !important;
+  border-color: #229954 !important;
+  color: white !important;
+}
+
+.watch-later-btn.icon-only-btn:hover {
+  background: #229954 !important;
+  border-color: #1e8449 !important;
+  color: white !important;
+}
+
+.watch-later-btn.icon-only-btn.added {
+  background: #28a745 !important;
+  border-color: #1e7e34 !important;
+  color: white !important;
+}
+
+.watch-later-btn.icon-only-btn.added:hover {
+  background: #1e7e34 !important;
+  border-color: #155724 !important;
+  color: white !important;
+}
+
+/* Backward compatibility */
+.watchlist-btn.icon-only-btn {
+  background: #27ae60 !important;
+  border-color: #229954 !important;
+}
+
+.watchlist-btn.icon-only-btn:hover {
+  background: #229954 !important;
+  border-color: #1e8449 !important;
 }
 
 /* Featured button for reviews section */
@@ -942,13 +1125,141 @@ onMounted(() => {
   margin-right: 0.5rem;
 }
 
+.action-buttons-container {
+  margin-top: 2rem;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.review-btn, .watch-later-btn, .like-btn {
+  background: rgba(255, 255, 255, 0.95) !important;
+  color: #333333 !important;
+  border: 2px solid #e9ecef !important;
+  font-weight: 600 !important;
+  padding: 10px 20px !important;
+  border-radius: 8px !important;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s ease !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+}
+
+.review-btn:hover, .watch-later-btn:hover, .like-btn:hover {
+  background: white !important;
+  border-color: #333333 !important;
+  color: #333333 !important;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+.watch-later-btn.highlighted-btn {
+  background: rgba(255, 255, 255, 0.95) !important;
+  color: #333333 !important;
+  border-color: #e9ecef !important;
+}
+
+.watch-later-btn.highlighted-btn:hover {
+  background: white !important;
+  border-color: #333333 !important;
+  color: #333333 !important;
+}
+
+/* Backward compatibility */
+.watchlist-btn.highlighted-btn {
+  background: rgba(255, 255, 255, 0.95) !important;
+  color: #333333 !important;
+  border-color: #e9ecef !important;
+}
+
+.watchlist-btn.highlighted-btn:hover {
+  background: white !important;
+  border-color: #333333 !important;
+  color: #333333 !important;
+}
+
+.like-btn.liked {
+  background: rgba(255, 69, 90, 0.95) !important;
+  color: white !important;
+  border-color: #ff455a !important;
+}
+
+.like-btn.liked:hover {
+  background: #ff455a !important;
+  border-color: #ff455a !important;
+  color: white !important;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(255, 69, 90, 0.3);
+}
+
 /* Review interaction styles */
 .review-actions {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.75rem;
   margin-top: 1rem;
   padding-top: 1rem;
   border-top: 1px solid var(--border-color);
+}
+
+/* Unified Review Action Button Styling */
+.review-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #f8f9fa !important;
+  border: 1px solid #e9ecef !important;
+  color: #6c757d !important;
+  transition: all 0.3s ease !important;
+  border-radius: 6px !important;
+  font-weight: 500 !important;
+  padding: 8px 12px !important;
+}
+
+.review-action-btn:hover {
+  background: #e9ecef !important;
+  border-color: #adb5bd !important;
+  color: #495057 !important;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.review-action-btn.el-button--primary {
+  background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%) !important;
+  border-color: #e74c3c !important;
+  color: white !important;
+}
+
+.review-action-btn.el-button--primary:hover {
+  background: linear-gradient(135deg, #c0392b 0%, #a93226 100%) !important;
+  border-color: #c0392b !important;
+  transform: translateY(-1px) scale(1.05);
+  box-shadow: 0 4px 8px rgba(231, 76, 60, 0.3);
+}
+
+.review-action-btn .heart-icon {
+  transition: all 0.3s ease;
+  font-size: 16px;
+}
+
+.review-action-btn.el-button--primary .heart-icon {
+  animation: heartbeat 0.6s ease-in-out;
+}
+
+.review-action-btn .el-icon {
+  font-size: 16px;
+}
+
+@keyframes heartbeat {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); }
 }
 
 .action-btn {
@@ -964,13 +1275,66 @@ onMounted(() => {
 
 .comments-section {
   margin-top: 1rem;
-  padding: 1rem;
-  background-color: var(--hover-color);
+  padding: 1.5rem;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 50%, #f8f9fa 100%);
+  border: 1px solid #dee2e6;
+  border-radius: 12px;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.existing-comments {
+  margin-bottom: 1rem;
+}
+
+.comment-item {
+  background: white;
+  border: 1px solid #e9ecef;
   border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 0.75rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+}
+
+.comment-item:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+}
+
+.comment-item:last-child {
+  margin-bottom: 0;
+}
+
+.comment-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #f1f3f4;
+}
+
+.comment-author {
+  font-weight: 600;
+  color: #333333;
+  font-size: 0.9rem;
+}
+
+.comment-date {
+  font-size: 0.8rem;
+  color: #6c757d;
+}
+
+.comment-content {
+  color: #495057;
+  line-height: 1.5;
+  font-size: 0.9rem;
 }
 
 .add-comment-form {
   margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #dee2e6;
 }
 
 .comment-input {
@@ -979,7 +1343,64 @@ onMounted(() => {
 
 .comment-actions {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.75rem;
+}
+
+/* Edit Review Actions Styling */
+.edit-review-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+/* Review Form Actions Styling */
+.review-form-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+/* Unified button theme for comment, edit, and form actions */
+.comment-actions .el-button--primary,
+.edit-review-actions .save-btn,
+.review-form-actions .submit-btn {
+  background: #2c3e50 !important;
+  border-color: #2c3e50 !important;
+  color: white !important;
+  font-weight: 600 !important;
+  border-radius: 6px !important;
+  padding: 8px 16px !important;
+  transition: all 0.3s ease !important;
+}
+
+.comment-actions .el-button--primary:hover,
+.edit-review-actions .save-btn:hover,
+.review-form-actions .submit-btn:hover {
+  background: #34495e !important;
+  border-color: #34495e !important;
+  color: white !important;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(44, 62, 80, 0.3);
+}
+
+.comment-actions .el-button:not(.el-button--primary),
+.edit-review-actions .cancel-btn,
+.review-form-actions .cancel-btn {
+  background: #f8f9fa !important;
+  border-color: #dee2e6 !important;
+  color: #6c757d !important;
+  font-weight: 500 !important;
+  border-radius: 6px !important;
+  padding: 8px 16px !important;
+  transition: all 0.3s ease !important;
+}
+
+.comment-actions .el-button:not(.el-button--primary):hover,
+.edit-review-actions .cancel-btn:hover,
+.review-form-actions .cancel-btn:hover {
+  background: #e9ecef !important;
+  border-color: #adb5bd !important;
+  color: #495057 !important;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .no-reviews {

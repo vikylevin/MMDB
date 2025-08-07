@@ -172,3 +172,29 @@ def get_available_languages():
     except requests.RequestException as e:
         print(f"Error fetching languages: {e}")
         return None
+
+def get_user_region(request=None):
+    """
+    Get user's region for localized content based on IP address.
+    Returns GB (UK) as default for better movie content availability.
+    
+    Args:
+        request: Flask request object to extract IP from (for future implementation)
+    
+    Returns:
+        str: Two-letter country code (ISO 3166-1 alpha-2)
+    """
+    # For now, return GB (UK) as default since it has good movie content
+    # This can be enhanced later with actual IP geolocation:
+    # - Use IP geolocation services (like ipapi.co, geoip2, etc.)
+    # - Check request.environ.get('HTTP_X_FORWARDED_FOR') for real IP in production
+    # - Parse user's browser Accept-Language header
+    # - Allow users to set their preferred region in profile
+    
+    if request:
+        # Future implementation: extract and geolocate IP
+        # ip = request.environ.get('HTTP_X_FORWARDED_FOR', request.remote_addr)
+        # return geolocate_ip(ip)
+        pass
+    
+    return 'GB'  # Default to UK for better movie availability

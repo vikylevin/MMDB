@@ -1,10 +1,10 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch, nextTick, inject } from 'vue';
 import { useRouter } from 'vue-router';
-import { StarFilled, Clock, Check } from '@element-plus/icons-vue';
+import { StarFilled, Clock, View } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
-import { isAuthenticated, toggleWatchlist, toggleFavorite, toggleWatched, getFavorites, getWatchlist, getWatched, rateMovie, getMovieRating } from '../services/api';
-import { isMovieFavorite, isMovieInWatchlist, isMovieWatched, updateMovieStatus, isInitialized } from '../stores/movieStatus';
+import { isAuthenticated, toggleWatchLater, toggleLike, toggleWatched, getLikes, getWatchLater, getWatched, rateMovie, getMovieRating } from '../services/api';
+import { isMovieLiked, isMovieInWatchLater, isMovieWatched, updateMovieStatus, isInitialized } from '../stores/movieStatus';
 import { isUserAuthenticated } from '../stores/auth';
 
 // Inject theme configuration
@@ -40,14 +40,17 @@ const ratingMessage = computed(() => {
 });
 
 // Use computed properties based on the global status store
-const addedToWatchlist = computed(() => {
+const addedToWatchLater = computed(() => {
   const movieId = Number(props.movie.tmdb_id || props.movie.id);
-  return isMovieInWatchlist(movieId);
+  return isMovieInWatchLater(movieId);
 });
 
-const addedToFavorite = computed(() => {
+// Backward compatibility alias
+const addedToWatchlist = addedToWatchLater;
+
+const addedToLikes = computed(() => {
   const movieId = Number(props.movie.tmdb_id || props.movie.id);
-  return isMovieFavorite(movieId);
+  return isMovieLiked(movieId);
 });
 
 const isWatched = computed(() => {
@@ -74,38 +77,39 @@ const handleToggleWatched = async () => {
     ElMessage.error('Failed to update watched status');
   }
 }
-// Handle toggle favorite (like) button
-const handleToggleFavorite = async () => {
+// Handle toggle like button
+const handleToggleLike = async () => {
   if (!isAuthenticated()) {
     ElMessage.warning('Please login to like movies');
     return;
   }
   try {
     const movieId = Number(props.movie.tmdb_id || props.movie.id);
-    // First, toggle favorite
-    const response = await toggleFavorite(movieId);
-    updateMovieStatus(movieId, 'favorites', response.added);
+    // Toggle like
+    const response = await toggleLike(movieId);
+    updateMovieStatus(movieId, 'likes', response.added);
     
     if (response.added) {
-      ElMessage.success('Added to favorites');
+      ElMessage.success('Movie liked');
       // Auto add to watched if not already
       if (!isMovieWatched(movieId)) {
         try {
           const watchedResp = await toggleWatched(movieId);
           updateMovieStatus(movieId, 'watched', watchedResp.watched);
         } catch (err) {
-          // Do not affect favorite main flow
+          // Do not affect like main flow
           console.error('Error auto-marking as watched:', err);
         }
       }
     } else {
-      ElMessage.success('Removed from favorites');
+      ElMessage.success('Movie unliked');
     }
   } catch (error) {
-    console.error('Error updating favorite:', error);
-    ElMessage.error('Failed to update favorite');
+    console.error('Error updating like status:', error);
+    ElMessage.error('Failed to update like status');
   }
-}
+};
+
 const titleRef = ref(null);
 const isTextOverflow = ref(false);
 
@@ -258,9 +262,9 @@ const handleRating = async (value) => {
   }
 }
 
-const handleToggleWatchlist = async () => {
+const handleToggleWatchLater = async () => {
   if (!isAuthenticated()) {
-    ElMessage.warning('Please login to add movies to your watchlist');
+    ElMessage.warning('Please login to add movies to your watch later list');
     return;
   }
   try {
@@ -269,18 +273,21 @@ const handleToggleWatchlist = async () => {
       ElMessage.error('Invalid movie id');
       return;
     }
-    const response = await toggleWatchlist(movieId);
-    updateMovieStatus(movieId, 'watchlist', response.added);
+    const response = await toggleWatchLater(movieId);
+    updateMovieStatus(movieId, 'watchLater', response.added);
     if (response.added) {
-      ElMessage.success('Added to watchlist');
+      ElMessage.success('Added to watch later');
     } else {
-      ElMessage.success('Removed from watchlist');
+      ElMessage.success('Removed from watch later');
     }
   } catch (error) {
-    console.error('Error updating watchlist:', error);
-    ElMessage.error('Failed to update watchlist');
+    console.error('Error updating watch later:', error);
+    ElMessage.error('Failed to update watch later');
   }
 }
+
+// Backward compatibility alias
+const handleToggleWatchlist = handleToggleWatchLater;
 </script>
 
 <template>
@@ -332,14 +339,14 @@ const handleToggleWatchlist = async () => {
         </el-tooltip>
       </div>
 
-      <!-- Watch Later & Like/Favorite buttons side by side, now below the rating -->
+      <!-- Watch Later & Like buttons side by side, now below the rating -->
       <div class="user-actions">
         <el-tooltip content="Watch Later" placement="top">
           <el-button
-            :type="addedToWatchlist ? 'success' : 'default'"
+            :type="addedToWatchLater ? 'success' : 'default'"
             size="small"
-            @click="handleToggleWatchlist"
-            class="watchlist-btn"
+            @click="handleToggleWatchLater"
+            class="watch-later-btn"
           >
             <el-icon><Clock /></el-icon>
           </el-button>
@@ -351,15 +358,15 @@ const handleToggleWatchlist = async () => {
             @click="handleToggleWatched"
             class="watched-btn"
           >
-            <el-icon><Check /></el-icon>
+            <el-icon><View /></el-icon>
           </el-button>
         </el-tooltip>
         <el-tooltip content="Like" placement="top">
           <el-button
-            :type="addedToFavorite ? 'danger' : 'default'"
+            :type="addedToLikes ? 'danger' : 'default'"
             size="small"
-            @click="handleToggleFavorite"
-            class="favorite-btn"
+            @click="handleToggleLike"
+            class="like-btn"
           >
             <el-icon><StarFilled /></el-icon>
           </el-button>
@@ -420,7 +427,12 @@ const handleToggleWatchlist = async () => {
   height: 14px;
 }
 
-.favorite-badge {
+.like-badge {
+  background-color: var(--error-color);
+}
+
+/* Backward compatibility alias */
+.like-badge {
   background-color: var(--error-color);
 }
 
@@ -428,6 +440,11 @@ const handleToggleWatchlist = async () => {
   background-color: var(--text-color);
 }
 
+.watch-later-badge {
+  background-color: var(--success-color);
+}
+
+/* Backward compatibility alias */
 .watchlist-badge {
   background-color: var(--success-color);
 }
@@ -446,12 +463,13 @@ const handleToggleWatchlist = async () => {
   cursor: pointer;
   margin: 0 auto; /* Center the poster in the card */
   flex: 0 0 auto; /* Prevent poster from being compressed */
+  background: var(--background-color);
 }
 
 .movie-poster {
   width: 100%;
   height: 100%;
-  object-fit: cover; /* Use cover to fill container completely */
+  object-fit: cover; /* Back to cover for consistent display */
   object-position: center; /* Center the poster for best overall composition */
   display: block;
   transition: transform 0.3s ease; /* Add smooth transition */
@@ -597,8 +615,8 @@ const handleToggleWatchlist = async () => {
   color: var(--light-text);
 }
 
-.watchlist-btn,
-.favorite-btn,
+.watch-later-btn,
+.like-btn,
 .watched-btn {
   width: 36px;
   min-width: 36px;
@@ -615,21 +633,21 @@ const handleToggleWatchlist = async () => {
 }
 
 /* Increase icon size in action buttons */
-.watchlist-btn .el-icon,
-.favorite-btn .el-icon,
+.watch-later-btn .el-icon,
+.like-btn .el-icon,
 .watched-btn .el-icon {
   font-size: 16px;
 }
 
-.watchlist-btn .el-icon svg,
-.favorite-btn .el-icon svg,
+.watch-later-btn .el-icon svg,
+.like-btn .el-icon svg,
 .watched-btn .el-icon svg {
   width: 16px;
   height: 16px;
 }
 
 /* Active state styles for marked buttons */
-.watchlist-btn.el-button--success {
+.watch-later-btn.el-button--success {
   background-color: var(--success-color);
   border-color: var(--success-color);
   color: white;
@@ -645,7 +663,7 @@ const handleToggleWatchlist = async () => {
   box-shadow: 0 2px 8px rgba(51, 51, 51, 0.3);
 }
 
-.favorite-btn.el-button--danger {
+.like-btn.el-button--danger {
   background-color: var(--error-color);
   border-color: var(--error-color);
   color: white;
@@ -653,9 +671,9 @@ const handleToggleWatchlist = async () => {
   box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
 }
 
-.watchlist-btn.el-button--success:hover,
+.watch-later-btn.el-button--success:hover,
 .watched-btn.el-button--primary:hover,
-.favorite-btn.el-button--danger:hover {
+.like-btn.el-button--danger:hover {
   transform: scale(1.15);
 }
 
@@ -726,9 +744,9 @@ const handleToggleWatchlist = async () => {
   display: inline-flex !important;
 }
 
-/* Success button (watchlist added) - green background, white icon */
+/* Success button (watch later added) - green background, white icon */
 .user-actions .el-button--success,
-.user-actions .watchlist-btn.el-button--success {
+.user-actions .watch-later-btn.el-button--success {
   background-color: #67c23a !important;
   border-color: #67c23a !important;
   color: white !important;
@@ -736,8 +754,8 @@ const handleToggleWatchlist = async () => {
 
 .user-actions .el-button--success .el-icon,
 .user-actions .el-button--success .el-icon svg,
-.user-actions .watchlist-btn.el-button--success .el-icon,
-.user-actions .watchlist-btn.el-button--success .el-icon svg {
+.user-actions .watch-later-btn.el-button--success .el-icon,
+.user-actions .watch-later-btn.el-button--success .el-icon svg {
   color: white !important;
   fill: white !important;
 }
@@ -758,9 +776,9 @@ const handleToggleWatchlist = async () => {
   fill: white !important;
 }
 
-/* Danger button (favorite) - red background, white icon */
+/* Danger button (like) - red background, white icon */
 .user-actions .el-button--danger,
-.user-actions .favorite-btn.el-button--danger {
+.user-actions .like-btn.el-button--danger {
   background-color: #f56c6c !important;
   border-color: #f56c6c !important;
   color: white !important;
@@ -768,8 +786,8 @@ const handleToggleWatchlist = async () => {
 
 .user-actions .el-button--danger .el-icon,
 .user-actions .el-button--danger .el-icon svg,
-.user-actions .favorite-btn.el-button--danger .el-icon,
-.user-actions .favorite-btn.el-button--danger .el-icon svg {
+.user-actions .like-btn.el-button--danger .el-icon,
+.user-actions .like-btn.el-button--danger .el-icon svg {
   color: white !important;
   fill: white !important;
 }

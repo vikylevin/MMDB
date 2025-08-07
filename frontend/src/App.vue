@@ -4,7 +4,7 @@ import AppHeader from './components/AppHeader.vue';
 import AppFooter from './components/AppFooter.vue';
 import ElementThemeProvider from './components/ElementThemeProvider.vue';
 import { initializeMovieStatus, clearMovieStatus } from './stores/movieStatus';
-import { getFavorites, getWatchlist, getWatched } from './services/api';
+import { getWatchLater, getWatched, getLikes } from './services/api';
 import { isUserAuthenticated, initializeAuth } from './stores/auth';
 
 // Function to initialize movie status
@@ -12,17 +12,17 @@ const initializeUserMovieStatus = async () => {
   if (isUserAuthenticated.value) {
     try {
       // Load all movie statuses from backend
-      const [favoritesResponse, watchlistResponse, watchedResponse] = await Promise.all([
-        getFavorites().catch(() => []),
-        getWatchlist().catch(() => []),
+      const [likesResponse, watchLaterResponse, watchedResponse] = await Promise.all([
+        getLikes().catch(() => []),
+        getWatchLater().catch(() => []),
         getWatched().catch(() => [])
       ]);
       
       // Initialize the global status store
       // Backend returns arrays directly, not wrapped in {data: ...}
       initializeMovieStatus(
-        favoritesResponse || [],
-        watchlistResponse || [],
+        likesResponse || [],
+        watchLaterResponse || [],
         watchedResponse || []
       );
     } catch (error) {

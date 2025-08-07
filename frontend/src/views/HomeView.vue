@@ -215,7 +215,7 @@ onMounted(() => {
 }
 
 .movies-row :deep(.watchlist-btn),
-.movies-row :deep(.favorite-btn),
+.movies-row :deep(.like-btn),
 .movies-row :deep(.watched-btn) {
   width: 32px;
   height: 32px;

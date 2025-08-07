@@ -1,7 +1,6 @@
 # Backend
 __pycache__/
 *.py[cod]
-instance/movies.db
 get-pip.py
 
 # Frontend

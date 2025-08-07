@@ -31,20 +31,24 @@
           />
         </el-form-item>
         <el-form-item>
-          <el-button 
-            type="primary" 
-            :loading="loading" 
-            @click="handleLogin"
-            size="large"
-          >
-            {{ loading ? 'Signing In...' : 'Sign In' }}
-          </el-button>
-          <el-button 
-            @click="$router.push('/')"
-            size="large"
-          >
-            Back to Home
-          </el-button>
+          <div class="button-group">
+            <el-button 
+              type="primary" 
+              :loading="loading" 
+              @click="handleLogin"
+              size="large"
+              class="primary-btn"
+            >
+              {{ loading ? 'Signing In...' : 'Sign In' }}
+            </el-button>
+            <el-button 
+              @click="$router.push('/')"
+              size="large"
+              class="secondary-btn"
+            >
+              Back to Home
+            </el-button>
+          </div>
         </el-form-item>
       </el-form>
 
@@ -83,20 +87,24 @@
           />
         </el-form-item>
         <el-form-item>
-          <el-button 
-            type="primary" 
-            :loading="loading" 
-            @click="handleRegister"
-            size="large"
-          >
-            {{ loading ? 'Creating Account...' : 'Create Account' }}
-          </el-button>
-          <el-button 
-            @click="$router.push('/')"
-            size="large"
-          >
-            Back to Home
-          </el-button>
+          <div class="button-group">
+            <el-button 
+              type="primary" 
+              :loading="loading" 
+              @click="handleRegister"
+              size="large"
+              class="primary-btn"
+            >
+              {{ loading ? 'Creating Account...' : 'Create Account' }}
+            </el-button>
+            <el-button 
+              @click="$router.push('/')"
+              size="large"
+              class="secondary-btn"
+            >
+              Back to Home
+            </el-button>
+          </div>
         </el-form-item>
       </el-form>
     </el-card>
@@ -173,30 +181,9 @@ const handleRegister = async () => {
 
   loading.value = true
   try {
-    const response = await fetch('http://localhost:5000/api/auth/register', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(registerForm.value)
-    })
-
-    if (response.ok) {
-      ElMessage.success('Registration successful')
-      mode.value = 'login'
-      loginForm.value.username = registerForm.value.username
-      loginForm.value.password = ''
-      registerForm.value = {
-        username: '',
-        email: '',
-        password: ''
-      }
-      confirmPassword.value = ''
-      localStorage.setItem('login_time', Date.now().toString())
-    } else {
-      const data = await response.json()
-      throw new Error(data.message || 'Registration failed')
-    }
+    await register(registerForm.value.username, registerForm.value.email, registerForm.value.password)
+    ElMessage.success('Registration successful! You are now logged in.')
+    router.push('/')
   } catch (error) {
     console.error('Registration error:', error)
     ElMessage.error(error.message || 'Registration failed')
@@ -253,21 +240,39 @@ const handleRegister = async () => {
   gap: 10px;
 }
 
-.el-radio-button {
+:deep(.el-radio-button) {
   border-radius: 25px !important;
 }
 
-.el-radio-button__inner {
+:deep(.el-radio-button__inner) {
   border-radius: 25px !important;
   padding: 10px 25px;
   font-weight: 500;
   transition: all 0.3s ease;
+  background-color: #f5f5f5 !important;
+  border: 2px solid #e4e7ed !important;
+  color: #606266 !important;
 }
 
-.el-radio-button__orig-radio:checked + .el-radio-button__inner {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-color: #667eea;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+:deep(.el-radio-button__inner:hover) {
+  background-color: #e8e8e8 !important;
+  border-color: #333333 !important;
+  color: #333333 !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+:deep(.el-radio-button__orig-radio:checked + .el-radio-button__inner) {
+  background: linear-gradient(135deg, #333333 0%, #555555 100%) !important;
+  border-color: #333333 !important;
+  color: white !important;
+  box-shadow: 0 4px 12px rgba(51, 51, 51, 0.3);
+}
+
+:deep(.el-radio-button__orig-radio:checked + .el-radio-button__inner:hover) {
+  background: linear-gradient(135deg, #444444 0%, #666666 100%) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(51, 51, 51, 0.4);
 }
 
 /* Form styling */
@@ -376,6 +381,44 @@ const handleRegister = async () => {
   transform: none;
 }
 
+/* Button group styling */
+.button-group {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.primary-btn {
+  background: linear-gradient(135deg, #333333 0%, #555555 100%) !important;
+  border: none !important;
+  color: white !important;
+  box-shadow: 0 4px 12px rgba(51, 51, 51, 0.3);
+  flex: 1;
+  max-width: 180px;
+}
+
+.primary-btn:hover {
+  background: linear-gradient(135deg, #444444 0%, #666666 100%) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(51, 51, 51, 0.4);
+}
+
+.secondary-btn {
+  background: white !important;
+  border: 2px solid #e4e7ed !important;
+  color: #606266 !important;
+  flex: 1;
+  max-width: 180px;
+}
+
+.secondary-btn:hover {
+  border-color: #333333 !important;
+  color: #333333 !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
 /* Responsive design */
 @media (max-width: 480px) {
   .login-container {
@@ -390,9 +433,14 @@ const handleRegister = async () => {
     padding: 25px 20px;
   }
   
-  .el-button {
-    margin: 5px;
-    min-width: 100px;
+  .button-group {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .primary-btn,
+  .secondary-btn {
+    max-width: 100%;
   }
 }
 

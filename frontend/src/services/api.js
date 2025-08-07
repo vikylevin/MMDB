@@ -49,14 +49,13 @@ export const login = async (username, password) => {
 
 export const register = async (username, email, password) => {
   const response = await api.post('/auth/register', { username, email, password });
-  // If registration is successful, automatically log in
-  if (response.data && response.data.message === 'User registered successfully') {
-    // Call login API to get token and user info
-    return await login(username, password);
-  } else {
-    // Registration failed, return error
-    throw new Error(response.data?.error || 'Registration failed');
-  }
+  // Backend returns access_token and user data directly on successful registration
+  const { access_token, user } = response.data;
+  localStorage.setItem('access_token', access_token);
+  localStorage.setItem('user', JSON.stringify(user));
+  // Update reactive auth state
+  setAuthState(true, user);
+  return user;
 };
 
 export const logout = () => {
@@ -72,14 +71,17 @@ export const getProfile = async () => {
   return response.data;
 };
 
-export const getWatchlist = async () => {
-  const response = await api.get('/user/watchlist');
+export const getWatchLater = async () => {
+  const response = await api.get('/user/watch-later');
   return response.data;
 };
 
-// Get user's liked (favorite) movies
-export const getFavorites = async () => {
-  const response = await api.get('/user/favorites');
+// Backward compatibility alias
+export const getWatchlist = getWatchLater;
+
+// Get user's liked movies
+export const getLikes = async () => {
+  const response = await api.get('/user/likes');
   return response.data;
 };
 
@@ -90,15 +92,18 @@ export const getWatched = async () => {
 };
 
 // Movie APIs
-export const toggleWatchlist = async (movieId) => {
+export const toggleWatchLater = async (movieId) => {
   const id = Number(movieId);
   if (!id || isNaN(id)) {
     throw new Error('Invalid movie id');
   }
-  // 直接调用后端统一的 toggle watchlist 路由
-  const response = await api.post(`/movie/${id}/watchlist`);
+  // Call the new watch-later endpoint
+  const response = await api.post(`/movie/${id}/watch-later`);
   return response.data;
 };
+
+// Backward compatibility alias
+export const toggleWatchlist = toggleWatchLater;
 
 export const rateMovie = async (movieId, rating) => {
   const response = await api.post(`/movie/${movieId}/rate`, { rating });
@@ -137,19 +142,24 @@ export const toggleWatched = async (movieId) => {
   return response.data;
 };
 
-// Toggle favorite (like/unlike) for a movie
-export const toggleFavorite = async (movieId) => {
+// Toggle like for a movie
+export const toggleLike = async (movieId) => {
   const id = Number(movieId);
   if (!id || isNaN(id)) {
     throw new Error('Invalid movie id');
   }
-  const response = await api.post('/user/favorites', { movie_id: id });
+  const response = await api.post('/user/likes', { movie_id: id });
   return response.data;
 };
 
 // Review comment management
 export const addReviewComment = async (reviewId, comment) => {
   const response = await api.post(`/movie/reviews/${reviewId}/comments`, { comment });
+  return response.data;
+};
+
+export const getReviewComments = async (reviewId) => {
+  const response = await api.get(`/movie/reviews/${reviewId}/comments`);
   return response.data;
 };
 

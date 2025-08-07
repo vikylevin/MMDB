@@ -32,7 +32,7 @@ const currentYear = new Date().getFullYear();
           </div>
           <p class="brand-description">
             The ultimate movie database and rating platform. 
-            Discover, rate, and track your favorite films with our community.
+            Discover, rate, and track your liked films with our community.
           </p>
           <div class="social-links">
             <el-button circle size="small" class="social-btn" aria-label="Twitter">

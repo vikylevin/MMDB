@@ -75,15 +75,17 @@ const navigateToDetail = () => {
 .poster-container {
   position: relative;
   width: 100%;
-  height: 240px;
+  height: 250px;
   overflow: hidden;
+  background: var(--background-color);
 }
 
 .movie-poster {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: center top;
+  object-position: center;
+  background: var(--background-color);
 }
 
 .poster-placeholder {
@@ -137,12 +139,12 @@ const navigateToDetail = () => {
 /* Responsive design */
 @media (max-width: 768px) {
   .profile-movie-card {
-    width: 160px;
-    height: 280px;
+    width: 180px;
+    height: 320px;
   }
   
   .poster-container {
-    height: 200px;
+    height: 240px;
   }
   
   .movie-info {
