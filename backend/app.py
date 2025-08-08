@@ -13,16 +13,25 @@ app = Flask(__name__)
 
 # Configure CORS for different environments
 allowed_origins = ["http://localhost:5173", "https://mmdb-web.onrender.com"]
-if os.getenv('FLASK_ENV') == 'production':
-    frontend_url = os.getenv('FRONTEND_URL', 'https://mmdb-web.onrender.com')
-    if frontend_url not in allowed_origins:
-        allowed_origins.append(frontend_url)
+
+# Always add frontend URL if it's set and not already in the list
+frontend_url = os.getenv('FRONTEND_URL')
+if frontend_url and frontend_url not in allowed_origins:
+    allowed_origins.append(frontend_url)
+
+# For production, ensure production URL is always included
+production_frontend = "https://mmdb-web.onrender.com"
+if production_frontend not in allowed_origins:
+    allowed_origins.append(production_frontend)
+
+print(f"CORS allowed origins: {allowed_origins}")
 
 CORS(
     app,
     supports_credentials=True,
     origins=allowed_origins,
-    allow_headers=["Content-Type", "Authorization"]
+    allow_headers=["Content-Type", "Authorization"],
+    methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"]
 )
 
 # Configure Flask app

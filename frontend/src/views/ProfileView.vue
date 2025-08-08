@@ -1,7 +1,17 @@
 <template>
   <div class="profile-container">
-    <!-- personal information module -->
-    <el-card class="profile-info-card">
+    <!-- Loading overlay -->
+    <div v-if="isInitialLoading" v-loading="true" 
+         element-loading-text="Loading profile..."
+         element-loading-background="rgba(0, 0, 0, 0.3)"
+         class="loading-container">
+      <div style="height: 400px;"></div>
+    </div>
+    
+    <!-- Profile content -->
+    <div v-else>
+      <!-- personal information module -->
+      <el-card class="profile-info-card">
       <template #header>
         <div class="card-header">
           <el-icon><User /></el-icon>
@@ -395,7 +405,8 @@
         </div>
       </div>
     </el-card>
-  </div>
+    </div> <!-- End of v-else -->
+  </div> <!-- End of profile-container -->
 </template>
 
 <script setup>
@@ -422,6 +433,7 @@ const userReviews = ref([]);
 const activeTab = ref('likes');
 const isEditing = ref(false);
 const isSaving = ref(false);
+const isInitialLoading = ref(true);
 
 // User profile data for editing
 const userProfile = ref({
@@ -538,23 +550,59 @@ const saveProfile = async () => {
 
 const loadLikes = async () => {
   try {
+    console.log('Loading likes...');
     const response = await getLikes();
     // Backend returns array directly, not wrapped in {data: ...}
     likes.value = Array.isArray(response) ? response : response.data || [];
+    console.log('Likes loaded:', likes.value.length);
   } catch (error) {
     console.error('Error loading likes:', error);
-    ElMessage.error('Failed to load liked movies');
+    let errorMessage = 'Failed to load liked movies';
+    
+    if (error.response) {
+      if (error.response.status === 401) {
+        errorMessage = 'Please log in again to view your liked movies';
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('user');
+        router.push('/login');
+      } else if (error.response.data?.error) {
+        errorMessage = `Failed to load liked movies: ${error.response.data.error}`;
+      }
+    } else if (error.request) {
+      errorMessage = 'Network error - please check your connection';
+    }
+    
+    ElMessage.error(errorMessage);
+    likes.value = [];
   }
 };
 
 const loadWatchLater = async () => {
   try {
+    console.log('Loading watch later...');
     const response = await getWatchLater();
     // Backend returns array directly, not wrapped in {data: ...}
     watchLater.value = Array.isArray(response) ? response : response.data || [];
+    console.log('Watch later loaded:', watchLater.value.length);
   } catch (error) {
     console.error('Error loading watch later:', error);
-    ElMessage.error('Failed to load watch later');
+    let errorMessage = 'Failed to load watch later';
+    
+    if (error.response) {
+      if (error.response.status === 401) {
+        errorMessage = 'Please log in again to view your watch later list';
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('user');
+        router.push('/login');
+      } else if (error.response.data?.error) {
+        errorMessage = `Failed to load watch later: ${error.response.data.error}`;
+      }
+    } else if (error.request) {
+      errorMessage = 'Network error - please check your connection';
+    }
+    
+    ElMessage.error(errorMessage);
+    watchLater.value = [];
   }
 };
 
@@ -563,22 +611,58 @@ const loadWatchlist = loadWatchLater;
 
 const loadWatched = async () => {
   try {
+    console.log('Loading watched movies...');
     const response = await getWatched();
     // Backend returns array directly, not wrapped in {data: ...}
     watched.value = Array.isArray(response) ? response : response.data || [];
+    console.log('Watched movies loaded:', watched.value.length);
   } catch (error) {
     console.error('Error loading watched movies:', error);
-    ElMessage.error('Failed to load watched movies');
+    let errorMessage = 'Failed to load watched movies';
+    
+    if (error.response) {
+      if (error.response.status === 401) {
+        errorMessage = 'Please log in again to view your watched movies';
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('user');
+        router.push('/login');
+      } else if (error.response.data?.error) {
+        errorMessage = `Failed to load watched movies: ${error.response.data.error}`;
+      }
+    } else if (error.request) {
+      errorMessage = 'Network error - please check your connection';
+    }
+    
+    ElMessage.error(errorMessage);
+    watched.value = [];
   }
 };
 
 const loadUserReviews = async () => {
   try {
+    console.log('Loading user reviews...');
     const response = await getUserReviews();
     userReviews.value = Array.isArray(response) ? response : response.data || [];
+    console.log('User reviews loaded:', userReviews.value.length);
   } catch (error) {
     console.error('Error loading user reviews:', error);
-    ElMessage.error('Failed to load user reviews');
+    let errorMessage = 'Failed to load user reviews';
+    
+    if (error.response) {
+      if (error.response.status === 401) {
+        errorMessage = 'Please log in again to view your reviews';
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('user');
+        router.push('/login');
+      } else if (error.response.data?.error) {
+        errorMessage = `Failed to load reviews: ${error.response.data.error}`;
+      }
+    } else if (error.request) {
+      errorMessage = 'Network error - please check your connection';
+    }
+    
+    ElMessage.error(errorMessage);
+    userReviews.value = [];
   }
 };
 
@@ -633,24 +717,34 @@ const goToMovieDetailAndEdit = (movieId) => {
 };
 
 const loadAllData = async () => {
-  await Promise.all([
-    loadLikes(),
-    loadWatchLater(),
-    loadWatched(),
-    loadUserReviews()
-  ]);
-  
-  // Initialize global movie status
-  initializeMovieStatus(likes.value, watchLater.value, watched.value);
-  
-  // Initialize movie ratings cache
-  initializeMovieRatings(userReviews.value);
+  try {
+    await Promise.all([
+      loadLikes(),
+      loadWatchLater(),
+      loadWatched(),
+      loadUserReviews()
+    ]);
+    
+    // Initialize global movie status
+    initializeMovieStatus(likes.value, watchLater.value, watched.value);
+    
+    // Initialize movie ratings cache
+    initializeMovieRatings(userReviews.value);
+  } catch (error) {
+    console.error('Error loading profile data:', error);
+    ElMessage.error('Failed to load profile data');
+  } finally {
+    isInitialLoading.value = false;
+  }
 };
 
-onMounted(() => {
+onMounted(async () => {
   loadUserData();
   if (user.value) {
-    loadAllData();
+    await loadAllData();
+  } else {
+    // If no user, still stop loading
+    isInitialLoading.value = false;
   }
   
   // Start refresh if already on reviews tab
@@ -685,6 +779,15 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: 2rem;
+}
+
+/* Loading container */
+.loading-container {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
 }
 
 /* Personal information card */

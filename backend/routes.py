@@ -1,7 +1,7 @@
 import os
 import requests
 from datetime import datetime
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity, create_access_token
 from flask_cors import cross_origin
 from models import db, User, Movie, Rating, Review, WatchLaterItem, WatchedItem, LikedItem, ReviewLike, ReviewComment
@@ -20,7 +20,9 @@ def health_check():
         'status': 'healthy',
         'tmdb_api_key_configured': bool(TMDB_API_KEY),
         'tmdb_base_url': TMDB_BASE_URL,
-        'flask_env': os.getenv('FLASK_ENV', 'development')
+        'flask_env': os.getenv('FLASK_ENV', 'development'),
+        'frontend_url': os.getenv('FRONTEND_URL', 'not_set'),
+        'cors_origins': 'check CORS config in app.py'
     })
 
 # TMDB configuration
