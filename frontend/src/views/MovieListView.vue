@@ -5,6 +5,9 @@ import axios from 'axios';
 import MovieCard from '../components/MovieCard.vue';
 import MovieFilters from '../components/MovieFilters.vue';
 
+const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+console.log('MovieListView API URL being used:', API_URL);
+
 const route = useRoute();
 const category = computed(() => route.params.category || 'popular');
 
@@ -58,7 +61,7 @@ const fetchMovies = async (page = 1) => {
     }
 
     // All categories now use the same API endpoint pattern
-    let endpoint = `http://127.0.0.1:5000/api/movie/category/${category.value}`;
+    let endpoint = `${API_URL}/movie/category/${category.value}`;
     const response = await axios.get(endpoint, { params });
 
     if (response.data && response.data.results) {

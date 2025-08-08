@@ -8,6 +8,9 @@ import { isAuthenticated, getCurrentUser, rateMovie, getMovieRating, toggleWatch
          submitReview, getMovieReviews, toggleReviewLike, addReviewComment, getReviewComments, updateReview, deleteReview } from '../services/api';
 import { isMovieInWatchLater, updateMovieStatus, isMovieWatched, isMovieLiked } from '../stores/movieStatus';
 
+const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+console.log('MovieDetailView API URL being used:', API_URL);
+
 const route = useRoute();
 const router = useRouter();
 const movieId = computed(() => route.params.id);
@@ -145,7 +148,7 @@ const fetchMovieDetails = async () => {
     error.value = null;
 
     const [movieRes, reviewsData] = await Promise.all([
-      axios.get(`http://127.0.0.1:5000/api/movie/${movieId.value}`),
+      axios.get(`${API_URL}/movie/${movieId.value}`),
       getMovieReviews(movieId.value)
     ]);
 

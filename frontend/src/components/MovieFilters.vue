@@ -94,6 +94,9 @@
 import { ref, onMounted, computed } from 'vue';
 import axios from 'axios';
 
+const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+console.log('MovieFilters API URL being used:', API_URL);
+
 const emit = defineEmits(['filtersChanged']);
 
 const genres = ref([]);
@@ -133,7 +136,7 @@ const ratingMarks = ref({
 const fetchGenres = async () => {
   try {
     console.log('Fetching genres from API...');
-    const response = await axios.get('http://127.0.0.1:5000/api/movie/genres');
+    const response = await axios.get(`${API_URL}/movie/genres`);
     console.log('Genres API response:', response.data);
     if (response.data && response.data.genres) {
       genres.value = response.data.genres;
@@ -152,7 +155,7 @@ const fetchGenres = async () => {
 
 const fetchLanguages = async () => {
   try {
-    const response = await axios.get('http://127.0.0.1:5000/api/movie/languages');
+    const response = await axios.get(`${API_URL}/movie/languages`);
     if (response.data && Array.isArray(response.data)) {
       // Process languages and add Chinese alias
       const processedLanguages = response.data.map(lang => {

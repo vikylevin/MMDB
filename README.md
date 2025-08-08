@@ -26,7 +26,7 @@ A movie review website built with Vue.js frontend and Flask backend, using TMDB 
    ```
    python app.py
    ```
-   The backend should be running at http://localhost:5000
+   The backend should be running at http://localhost:5000 (development) or https://mmdb-f1b3.onrender.com (production)
 
 ### Frontend Setup
 
@@ -58,8 +58,8 @@ The application uses SQLite database, which will be created automatically in the
 
 After starting the Flask application, you can test if the backend is working correctly by:
 
-1. Opening your browser and navigating to: http://localhost:5000/api/movies/popular
+1. Opening your browser and navigating to: http://localhost:5000/api/movies/popular (development) or https://mmdb-f1b3.onrender.com/api/movies/popular (production)
 2. You should see a JSON response with popular movies data from TMDB.
 3. Other available endpoints for testing:
-   - Search for movies: http://localhost:5000/api/movies/search?query=YOUR_SEARCH_TERM
-   - Get movie details: http://localhost:5000/api/movies/MOVIE_ID (e.g., 550 for Fight Club)
+   - Search for movies: http://localhost:5000/api/movies/search?query=YOUR_SEARCH_TERM (development) or https://mmdb-f1b3.onrender.com/api/movies/search?query=YOUR_SEARCH_TERM (production)
+   - Get movie details: http://localhost:5000/api/movies/MOVIE_ID (development) or https://mmdb-f1b3.onrender.com/api/movies/MOVIE_ID (production) (e.g., 550 for Fight Club)

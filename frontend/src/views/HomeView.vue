@@ -1,7 +1,17 @@
 <template>
   <div class="router-view-container">
-    <!-- Popular Movies Section -->
-    <div class="movie-section">
+    <!-- Popular Movies Sectio// Fetch top rated mov// Fetch upcoming movies
+const fetchUpcomingMovies = async () => {
+  try {
+    loadingUpcoming.value = true
+    const response = await axios.get(`${API_URL}/movie/upcoming`, {
+      params: { page: 1, limit: 10 }
+    })nst fetchTopRatedMovies = async () => {
+  try {
+    loadingTopRated.value = true
+    const response = await axios.get(`${API_URL}/movie/top_rated`, {
+      params: { page: 1, limit: 10 }
+    })    <div class="movie-section">
       <div class="section-header">
         <h2>Popular Movies</h2>
         <el-button text @click="router.push('/movies/popular')">View All</el-button>
@@ -49,6 +59,9 @@ import MovieCard from '../components/MovieCard.vue'
 
 const router = useRouter()
 
+// Use the same API_URL logic as in api.js
+const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api'
+
 // Movie lists for different sections
 const popularMovies = ref([])
 const topRatedMovies = ref([])
@@ -63,7 +76,7 @@ const loadingUpcoming = ref(false)
 const fetchPopularMovies = async () => {
   try {
     loadingPopular.value = true
-    const response = await axios.get('http://localhost:5000/api/movie/popular', {
+    const response = await axios.get(`${API_URL}/movie/popular`, {
       params: { page: 1, limit: 10 }
     })
     if (response.data && response.data.results) {
@@ -80,7 +93,7 @@ const fetchPopularMovies = async () => {
 const fetchTopRatedMovies = async () => {
   try {
     loadingTopRated.value = true
-    const response = await axios.get('http://localhost:5000/api/movie/category/top-rated', {
+    const response = await axios.get(`${API_URL}/movie/category/top-rated`, {
       params: { page: 1, limit: 10 }
     })
     if (response.data && response.data.results) {
@@ -97,7 +110,7 @@ const fetchTopRatedMovies = async () => {
 const fetchUpcomingMovies = async () => {
   try {
     loadingUpcoming.value = true
-    const response = await axios.get('http://localhost:5000/api/movie/category/upcoming', {
+    const response = await axios.get(`${API_URL}/movie/category/upcoming`, {
       params: { page: 1, limit: 10 }
     })
     if (response.data && response.data.results) {

@@ -5,6 +5,9 @@ import axios from 'axios';
 import MovieCard from '../components/MovieCard.vue';
 import { Search } from '@element-plus/icons-vue';
 
+const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+console.log('SearchResultsView API URL being used:', API_URL);
+
 const route = useRoute();
 const searchQuery = ref(route.query.query || '');
 
@@ -22,7 +25,7 @@ const searchMovies = async (page = 1) => {
     loading.value = true;
     error.value = null;
 
-    const response = await axios.get(`http://127.0.0.1:5000/api/movie/search`, {
+    const response = await axios.get(`${API_URL}/movie/search`, {
       params: {
         query: searchQuery.value,
         page
