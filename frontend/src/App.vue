@@ -4,18 +4,20 @@ import AppHeader from './components/AppHeader.vue';
 import AppFooter from './components/AppFooter.vue';
 import ElementThemeProvider from './components/ElementThemeProvider.vue';
 import { initializeMovieStatus, clearMovieStatus } from './stores/movieStatus';
-import { getWatchLater, getWatched, getLikes } from './services/api';
+import { initializeMovieRatings, clearMovieRatings } from './stores/movieRatings';
+import { getWatchLater, getWatched, getLikes, getUserReviews } from './services/api';
 import { isUserAuthenticated, initializeAuth } from './stores/auth';
 
-// Function to initialize movie status
+// Function to initialize movie status and ratings
 const initializeUserMovieStatus = async () => {
   if (isUserAuthenticated.value) {
     try {
-      // Load all movie statuses from backend
-      const [likesResponse, watchLaterResponse, watchedResponse] = await Promise.all([
+      // Load all movie statuses and reviews from backend
+      const [likesResponse, watchLaterResponse, watchedResponse, reviewsResponse] = await Promise.all([
         getLikes().catch(() => []),
         getWatchLater().catch(() => []),
-        getWatched().catch(() => [])
+        getWatched().catch(() => []),
+        getUserReviews().catch(() => [])
       ]);
       
       // Initialize the global status store
@@ -25,12 +27,16 @@ const initializeUserMovieStatus = async () => {
         watchLaterResponse || [],
         watchedResponse || []
       );
+      
+      // Initialize the ratings cache
+      initializeMovieRatings(reviewsResponse || []);
     } catch (error) {
       console.error('Error initializing movie status:', error);
     }
   } else {
-    // Clear movie status when not authenticated
+    // Clear movie status and ratings when not authenticated
     clearMovieStatus();
+    clearMovieRatings();
   }
 };
 

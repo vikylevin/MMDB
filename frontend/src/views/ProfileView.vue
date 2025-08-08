@@ -406,6 +406,7 @@ import { getLikes, getWatchLater, getWatched, getUserReviews } from '../services
 import ProfileMovieCard from '../components/ProfileMovieCard.vue';
 import { ElMessage } from 'element-plus';
 import { initializeMovieStatus } from '../stores/movieStatus';
+import { initializeMovieRatings } from '../stores/movieRatings';
 
 const router = useRouter();
 
@@ -641,6 +642,9 @@ const loadAllData = async () => {
   
   // Initialize global movie status
   initializeMovieStatus(likes.value, watchLater.value, watched.value);
+  
+  // Initialize movie ratings cache
+  initializeMovieRatings(userReviews.value);
 };
 
 onMounted(() => {

@@ -5,6 +5,7 @@ import { StarFilled, Clock, View, Check } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
 import { isAuthenticated, toggleWatchLater, toggleLike, toggleWatched, getLikes, getWatchLater, getWatched, rateMovie, getMovieRating } from '../services/api';
 import { isMovieLiked, isMovieInWatchLater, isMovieWatched, updateMovieStatus, isInitialized } from '../stores/movieStatus';
+import { getMovieRating as getCachedRating, updateMovieRating, isRatingsLoaded } from '../stores/movieRatings';
 import { isUserAuthenticated } from '../stores/auth';
 
 // Inject theme configuration
@@ -20,6 +21,35 @@ const props = defineProps({
 
 const userRating = ref(0);
 const showRatingTooltip = ref(false);
+
+// Get rating from cache first, then fallback to API if needed
+const loadUserRating = async () => {
+  if (!isAuthenticated()) {
+    userRating.value = 0;
+    return;
+  }
+  
+  const movieId = Number(props.movie.tmdb_id || props.movie.id);
+  if (!movieId || isNaN(movieId)) return;
+  
+  // Try to get from cache first
+  if (isRatingsLoaded()) {
+    userRating.value = getCachedRating(movieId);
+    return;
+  }
+  
+  // Fallback to API call if cache not available
+  try {
+    const response = await getMovieRating(movieId);
+    const rating = response.rating || 0;
+    userRating.value = rating;
+    // Update cache
+    updateMovieRating(movieId, rating);
+  } catch (error) {
+    console.error('Error loading user rating:', error);
+    userRating.value = 0;
+  }
+};
 
 // Computed properties for rating styles - back to basics
 const ratingProps = computed(() => ({
@@ -123,22 +153,6 @@ const checkTextOverflow = () => {
   }
 };
 
-// Load user rating for this movie
-const loadUserRating = async () => {
-  if (!isAuthenticated()) return;
-  
-  try {
-    const movieId = Number(props.movie.tmdb_id || props.movie.id);
-    if (!movieId || isNaN(movieId)) return;
-    
-    const response = await getMovieRating(movieId);
-    userRating.value = response.rating || 0;
-  } catch (error) {
-    console.error('Error loading user rating:', error);
-    // Don't show error message as this is background loading
-  }
-};
-
 // Watch authentication state changes
 watch(isUserAuthenticated, (newAuthState) => {
   if (newAuthState) {
@@ -150,10 +164,14 @@ watch(isUserAuthenticated, (newAuthState) => {
   }
 });
 
-// Watch for initialization completion
-// Rating color management is now handled by Vue reactive properties
-// No need for manual DOM manipulation
+// Watch for ratings cache initialization
+watch(isRatingsLoaded, (loaded) => {
+  if (loaded && isAuthenticated()) {
+    loadUserRating();
+  }
+});
 
+// Watch for movie status initialization
 watch(isInitialized, (initialized) => {
   if (initialized && isAuthenticated()) {
     loadUserRating();
@@ -172,11 +190,10 @@ onMounted(() => {
   checkTextOverflow();
   // Listen for window resize events
   window.addEventListener('resize', checkTextOverflow);
-  // Load user rating immediately when component mounts if authenticated
+  // Load user rating immediately if cache is available, otherwise wait for cache initialization
   if (isAuthenticated()) {
-    loadUserRating(); // This will call forceRatingStarColors after loading data
+    loadUserRating();
   }
-  // Don't call forceRatingStarColors here - let loadUserRating handle it
 });
 
 onUnmounted(() => {
@@ -235,6 +252,9 @@ const handleRating = async (value) => {
     
     await rateMovie(movieId, value);
     userRating.value = value;
+    
+    // Update cache
+    updateMovieRating(movieId, value);
     
     // Auto-mark as watched when rating a movie (rating > 0)
     if (value > 0) {
