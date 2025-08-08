@@ -38,11 +38,6 @@ const router = createRouter({
       props: (route) => ({ query: route.query.query })
     },
     {
-      path: '/debug',
-      name: 'debug',
-      component: () => import('../views/DebugView.vue')
-    },
-    {
       // Catch-all route for 404
       path: '/:pathMatch(.*)*',
       name: 'not-found',

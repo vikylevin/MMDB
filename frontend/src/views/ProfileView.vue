@@ -1,20 +1,5 @@
 <template>
   <div class="profile-container">
-    <!-- Debug Info (temporary) -->
-    <el-card v-if="true" class="debug-card" style="margin-bottom: 20px; background-color: #f0f9ff; border: 1px solid #0ea5e9;">
-      <template #header>
-        <div style="color: #0284c7; font-weight: bold;">🔧 Debug Information</div>
-      </template>
-      <div style="font-size: 12px; line-height: 1.4;">
-        <p><strong>Environment:</strong> {{ debugInfo.mode }}</p>
-        <p><strong>API Base URL:</strong> {{ debugInfo.apiBaseUrl }}</p>
-        <p><strong>Is Authenticated:</strong> {{ debugInfo.isAuth }}</p>
-        <p><strong>Token Exists:</strong> {{ debugInfo.hasToken }}</p>
-        <p><strong>Current User:</strong> {{ debugInfo.currentUser }}</p>
-        <p><strong>Last API Error:</strong> {{ debugInfo.lastError || 'None' }}</p>
-      </div>
-    </el-card>
-    
     <!-- Loading overlay -->
     <div v-if="isInitialLoading" v-loading="true" 
          element-loading-text="Loading profile..."
@@ -450,16 +435,6 @@ const isEditing = ref(false);
 const isSaving = ref(false);
 const isInitialLoading = ref(true);
 
-// Debug information
-const debugInfo = ref({
-  mode: import.meta.env.MODE,
-  apiBaseUrl: import.meta.env.VITE_API_BASE_URL,
-  isAuth: false,
-  hasToken: false,
-  currentUser: null,
-  lastError: null
-});
-
 // User profile data for editing
 const userProfile = ref({
   fullName: '',
@@ -575,18 +550,16 @@ const saveProfile = async () => {
 
 const loadLikes = async () => {
   try {
-    console.log('Loading likes...');
+
     const response = await getLikes();
     // Backend returns array directly, not wrapped in {data: ...}
     likes.value = Array.isArray(response) ? response : response.data || [];
-    console.log('Likes loaded:', likes.value.length);
+
   } catch (error) {
     console.error('Error loading likes:', error);
-    debugInfo.value.lastError = `loadLikes: ${error.message}`;
     let errorMessage = 'Failed to load liked movies';
     
     if (error.response) {
-      debugInfo.value.lastError += ` (Status: ${error.response.status})`;
       if (error.response.status === 401) {
         errorMessage = 'Please log in again to view your liked movies';
         localStorage.removeItem('access_token');
@@ -597,7 +570,6 @@ const loadLikes = async () => {
       }
     } else if (error.request) {
       errorMessage = 'Network error - please check your connection';
-      debugInfo.value.lastError += ' (Network error)';
     }
     
     ElMessage.error(errorMessage);
@@ -607,11 +579,11 @@ const loadLikes = async () => {
 
 const loadWatchLater = async () => {
   try {
-    console.log('Loading watch later...');
+
     const response = await getWatchLater();
     // Backend returns array directly, not wrapped in {data: ...}
     watchLater.value = Array.isArray(response) ? response : response.data || [];
-    console.log('Watch later loaded:', watchLater.value.length);
+
   } catch (error) {
     console.error('Error loading watch later:', error);
     let errorMessage = 'Failed to load watch later';
@@ -639,11 +611,11 @@ const loadWatchlist = loadWatchLater;
 
 const loadWatched = async () => {
   try {
-    console.log('Loading watched movies...');
+
     const response = await getWatched();
     // Backend returns array directly, not wrapped in {data: ...}
     watched.value = Array.isArray(response) ? response : response.data || [];
-    console.log('Watched movies loaded:', watched.value.length);
+
   } catch (error) {
     console.error('Error loading watched movies:', error);
     let errorMessage = 'Failed to load watched movies';
@@ -668,10 +640,10 @@ const loadWatched = async () => {
 
 const loadUserReviews = async () => {
   try {
-    console.log('Loading user reviews...');
+
     const response = await getUserReviews();
     userReviews.value = Array.isArray(response) ? response : response.data || [];
-    console.log('User reviews loaded:', userReviews.value.length);
+
   } catch (error) {
     console.error('Error loading user reviews:', error);
     let errorMessage = 'Failed to load user reviews';
@@ -767,12 +739,6 @@ const loadAllData = async () => {
 };
 
 onMounted(async () => {
-  // Initialize debug info
-  debugInfo.value.isAuth = !!localStorage.getItem('access_token');
-  debugInfo.value.hasToken = !!localStorage.getItem('access_token');
-  const userStr = localStorage.getItem('user');
-  debugInfo.value.currentUser = userStr ? JSON.parse(userStr).username : 'None';
-  
   loadUserData();
   if (user.value) {
     await loadAllData();
