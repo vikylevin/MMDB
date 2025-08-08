@@ -79,10 +79,12 @@ const loadUserRating = async () => {
 const handleRating = async (rating) => {
   if (!isAuthenticated()) {
     ElMessage.warning('Please log in to rate movies');
+    router.push('/login');
     return;
   }
 
   try {
+    console.log('Submitting rating:', rating, 'for movie:', movieId.value);
     await rateMovie(movieId.value, rating);
     userRating.value = rating;
     
@@ -97,7 +99,25 @@ const handleRating = async (rating) => {
     ElMessage.success('Rating saved successfully');
   } catch (error) {
     console.error('Error saving rating:', error);
-    ElMessage.error('Failed to save rating');
+    let errorMessage = 'Failed to save rating';
+    
+    if (error.response) {
+      if (error.response.status === 401) {
+        errorMessage = 'Please log in again to rate movies';
+        // Clear invalid token
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('user');
+        router.push('/login');
+      } else if (error.response.data?.error) {
+        errorMessage = `Failed to save rating: ${error.response.data.error}`;
+      }
+    } else if (error.request) {
+      errorMessage = 'Network error - please check your connection';
+    }
+    
+    ElMessage.error(errorMessage);
+    // Reset rating to previous value
+    await loadUserRating();
   }
 };
 
@@ -128,17 +148,34 @@ const toggleWatchlistHandler = toggleWatchLaterHandler;
 const toggleLikeHandler = async () => {
   if (!isAuthenticated()) {
     ElMessage.warning('Please log in to like movies');
+    router.push('/login');
     return;
   }
 
   try {
+    console.log('Toggling like for movie:', movieId.value);
     const response = await toggleLike(movieId.value);
     // Update global state
     updateMovieStatus(Number(movieId.value), 'likes', response.added);
     ElMessage.success(`Movie ${response.added ? 'liked' : 'unliked'}`);
   } catch (err) {
     console.error('Error updating like status:', err);
-    ElMessage.error('Failed to update like status. Please try again later.');
+    let errorMessage = 'Failed to update like status. Please try again later.';
+    
+    if (err.response) {
+      if (err.response.status === 401) {
+        errorMessage = 'Please log in again to like movies';
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('user');
+        router.push('/login');
+      } else if (err.response.data?.error) {
+        errorMessage = `Failed to update like status: ${err.response.data.error}`;
+      }
+    } else if (err.request) {
+      errorMessage = 'Network error - please check your connection';
+    }
+    
+    ElMessage.error(errorMessage);
   }
 };
 
@@ -190,6 +227,7 @@ const formatReleaseDate = (dateString) => {
 const submitUserReview = async () => {
   if (!isAuthenticated()) {
     ElMessage.warning('Please log in to write a review');
+    router.push('/login');
     return;
   }
 
@@ -200,6 +238,7 @@ const submitUserReview = async () => {
 
   reviewSubmitting.value = true;
   try {
+    console.log('Submitting review for movie:', movieId.value, userReview.value);
     await submitReview(movieId.value, {
       rating: userReview.value.rating,
       comment: userReview.value.comment.trim()
@@ -216,11 +255,22 @@ const submitUserReview = async () => {
     await fetchMovieDetails();
   } catch (err) {
     console.error('Error submitting review:', err);
-    if (err.response?.data?.error) {
-      ElMessage.error(`Failed to submit review: ${err.response.data.error}`);
-    } else {
-      ElMessage.error('Failed to submit review');
+    let errorMessage = 'Failed to submit review';
+    
+    if (err.response) {
+      if (err.response.status === 401) {
+        errorMessage = 'Please log in again to submit reviews';
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('user');
+        router.push('/login');
+      } else if (err.response.data?.error) {
+        errorMessage = `Failed to submit review: ${err.response.data.error}`;
+      }
+    } else if (err.request) {
+      errorMessage = 'Network error - please check your connection';
     }
+    
+    ElMessage.error(errorMessage);
   } finally {
     reviewSubmitting.value = false;
   }
