@@ -1,7 +1,8 @@
 import axios from 'axios';
 import { setAuthState } from '../stores/auth';
 
-const API_URL = 'http://localhost:5000/api';
+// Use environment variable for API URL, fallback to localhost for development
+const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
 
 // Create axios instance with base configuration
 const api = axios.create({

@@ -10,10 +10,17 @@ from models import db
 load_dotenv()
 
 app = Flask(__name__)
+
+# Configure CORS for different environments
+allowed_origins = ["http://localhost:5173"]
+if os.getenv('FLASK_ENV') == 'production':
+    frontend_url = os.getenv('FRONTEND_URL', 'https://movie-review-frontend.onrender.com')
+    allowed_origins.append(frontend_url)
+
 CORS(
     app,
     supports_credentials=True,
-    origins=["http://localhost:5173"],
+    origins=allowed_origins,
     allow_headers=["Content-Type", "Authorization"]
 )
 
