@@ -12,10 +12,11 @@ load_dotenv()
 app = Flask(__name__)
 
 # Configure CORS for different environments
-allowed_origins = ["http://localhost:5173"]
+allowed_origins = ["http://localhost:5173", "https://mmdb-web.onrender.com"]
 if os.getenv('FLASK_ENV') == 'production':
-    frontend_url = os.getenv('FRONTEND_URL', 'https://movie-review-frontend.onrender.com')
-    allowed_origins.append(frontend_url)
+    frontend_url = os.getenv('FRONTEND_URL', 'https://mmdb-web.onrender.com')
+    if frontend_url not in allowed_origins:
+        allowed_origins.append(frontend_url)
 
 CORS(
     app,
