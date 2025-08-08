@@ -1,6 +1,6 @@
 import os
 from datetime import timedelta
-from flask import Flask
+from flask import Flask, request, make_response
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 from dotenv import load_dotenv
@@ -30,8 +30,11 @@ CORS(
     app,
     supports_credentials=True,
     origins=allowed_origins,
-    allow_headers=["Content-Type", "Authorization"],
-    methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+    allow_headers=["Content-Type", "Authorization", "Access-Control-Allow-Headers", "Origin", "Accept", "X-Requested-With"],
+    methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    expose_headers=["Content-Range", "X-Content-Range"],
+    send_wildcard=False,
+    vary_header=True
 )
 
 # Configure Flask app
@@ -51,6 +54,23 @@ app.config['JWT_HEADER_TYPE'] = 'Bearer'
 
 db.init_app(app)
 jwt = JWTManager(app)
+
+# Add a global OPTIONS handler for CORS preflight requests
+@app.before_request
+def handle_preflight():
+    if request.method == "OPTIONS":
+        response = make_response()
+        origin = request.headers.get('Origin')
+        # Check if origin is in allowed list
+        if origin in allowed_origins:
+            response.headers.add("Access-Control-Allow-Origin", origin)
+        else:
+            # For debugging - always allow in development
+            response.headers.add("Access-Control-Allow-Origin", "https://mmdb-web.onrender.com")
+        response.headers.add('Access-Control-Allow-Headers', "Content-Type,Authorization")
+        response.headers.add('Access-Control-Allow-Methods', "GET,PUT,POST,DELETE,OPTIONS")
+        response.headers.add('Access-Control-Allow-Credentials', 'true')
+        return response
 
 # Import and register blueprints
 from routes import user_bp, auth_bp, movie_bp
