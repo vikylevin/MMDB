@@ -48,13 +48,14 @@ app.register_blueprint(user_bp, url_prefix='/api/user')
 app.register_blueprint(auth_bp, url_prefix='/api/auth')
 app.register_blueprint(movie_bp, url_prefix='/api/movie')
 
-# Create tables if not exist
-with app.app_context():
-    db.create_all()
-
-
+# Create tables only when running directly (not during import)
+def create_tables():
+    """Create database tables if they don't exist"""
+    with app.app_context():
+        db.create_all()
 
 if __name__ == '__main__':
+    create_tables()
     print('Registered routes:')
     for rule in app.url_map.iter_rules():
         print(f"{rule}")
