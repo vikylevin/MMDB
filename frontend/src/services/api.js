@@ -32,11 +32,17 @@ api.interceptors.response.use(
   response => response,
   error => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('user');
-      // Update reactive auth state
-      setAuthState(false, null);
-      window.location.href = '/login';
+      // Only redirect if we're not already on the login page
+      if (window.location.pathname !== '/login') {
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('user');
+        // Update reactive auth state
+        setAuthState(false, null);
+        // Use router instead of direct window.location for better SPA behavior
+        import('../router/index.js').then(({ default: router }) => {
+          router.push('/login');
+        });
+      }
     }
     return Promise.reject(error);
   }

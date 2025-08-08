@@ -162,7 +162,31 @@ const handleLogin = async () => {
     ElMessage.success('Login successful')
     router.push('/')
   } catch (error) {
-    ElMessage.error('Login failed')
+    console.error('Login error:', error)
+    let errorMessage = 'Login failed'
+    
+    if (error.response) {
+      // The request was made and the server responded with a status code
+      // that falls out of the range of 2xx
+      if (error.response.status === 401) {
+        errorMessage = 'Invalid username or password'
+      } else if (error.response.status === 400) {
+        errorMessage = error.response.data?.error || 'Invalid request'
+      } else if (error.response.status === 500) {
+        errorMessage = 'Server error, please try again later'
+      } else {
+        errorMessage = `Error: ${error.response.status} - ${error.response.data?.error || 'Unknown error'}`
+      }
+    } else if (error.request) {
+      // The request was made but no response was received
+      errorMessage = 'Network error - please check your connection'
+    } else {
+      // Something happened in setting up the request that triggered an Error
+      errorMessage = error.message || 'An unexpected error occurred'
+    }
+    
+    ElMessage.error(errorMessage)
+    // Stay on login page, don't redirect
   } finally {
     loading.value = false
   }
@@ -186,7 +210,26 @@ const handleRegister = async () => {
     router.push('/')
   } catch (error) {
     console.error('Registration error:', error)
-    ElMessage.error(error.message || 'Registration failed')
+    let errorMessage = 'Registration failed'
+    
+    if (error.response) {
+      if (error.response.status === 400) {
+        errorMessage = error.response.data?.error || 'Invalid registration data'
+      } else if (error.response.status === 409) {
+        errorMessage = 'Username or email already exists'
+      } else if (error.response.status === 500) {
+        errorMessage = 'Server error, please try again later'
+      } else {
+        errorMessage = `Error: ${error.response.status} - ${error.response.data?.error || 'Unknown error'}`
+      }
+    } else if (error.request) {
+      errorMessage = 'Network error - please check your connection'
+    } else {
+      errorMessage = error.message || 'An unexpected error occurred'
+    }
+    
+    ElMessage.error(errorMessage)
+    // Stay on login page, don't redirect
   } finally {
     loading.value = false
   }
