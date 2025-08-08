@@ -244,20 +244,30 @@ def toggle_watched():
 @movie_bp.route('/popular', methods=['GET'])
 def popular_movies_route():
     """Return a list of popular movies from TMDB."""
-    page = request.args.get('page', 1, type=int)
-    url = f'{TMDB_BASE_URL}/movie/popular'
-    params = {
-        'api_key': TMDB_API_KEY,
-        'language': 'en-GB',
-        'page': page
-    }
     try:
+        page = request.args.get('page', 1, type=int)
+        print(f"Fetching popular movies for page: {page}")
+        print(f"TMDB API Key exists: {bool(TMDB_API_KEY)}")
+        
+        url = f'{TMDB_BASE_URL}/movie/popular'
+        params = {
+            'api_key': TMDB_API_KEY,
+            'language': 'en-GB',
+            'page': page
+        }
+        
         response = requests.get(url, params=params)
+        response.raise_for_status()
         data = response.json()
+        
         if 'results' in data:
             data['results'] = data['results'][:20]
+        
+        print(f"Successfully fetched {len(data.get('results', []))} popular movies")
         return jsonify(data)
     except Exception as e:
+        print(f"Error fetching popular movies: {str(e)}")
+        return jsonify({'error': str(e)}), 500
         return jsonify({'error': str(e)}), 500
 
 @movie_bp.route('/search', methods=['GET'])
@@ -363,12 +373,19 @@ def get_movie_genres_endpoint():
         return jsonify({'error': str(e)}), 500
 
 @movie_bp.route('/languages', methods=['GET'])
-def get_available_languages():
+def get_available_languages_route():
     """Return list of available languages from TMDB."""
     try:
+        print(f"TMDB API Key exists: {bool(TMDB_API_KEY)}")
+        print(f"TMDB Base URL: {TMDB_BASE_URL}")
+        
+        from tmdb import get_available_languages
         data = get_available_languages()
+        if data is None:
+            return jsonify({'error': 'Failed to fetch languages from TMDB'}), 500
         return jsonify(data)
     except Exception as e:
+        print(f"Error in get_available_languages_route: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 
