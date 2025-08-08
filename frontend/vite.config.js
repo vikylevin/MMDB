@@ -6,6 +6,7 @@ export default defineConfig({
   plugins: [vue()],
   build: {
     outDir: 'dist',
+    copyPublicDir: true,
     rollupOptions: {
       output: {
         manualChunks: {
@@ -17,6 +18,12 @@ export default defineConfig({
   },
   server: {
     host: '0.0.0.0',
-    port: 5173
+    port: 5173,
+    historyApiFallback: true
+  },
+  preview: {
+    host: '0.0.0.0',
+    port: 4173,
+    historyApiFallback: true
   }
 })

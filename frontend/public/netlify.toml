@@ -1,0 +1,5 @@
+# This file is for Netlify compatibility but also works on Render
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
