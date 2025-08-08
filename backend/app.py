@@ -11,8 +11,12 @@ load_dotenv()
 
 app = Flask(__name__)
 
-# Configure CORS for different environments
-allowed_origins = ["http://localhost:5173", "https://mmdb-web.onrender.com"]
+# Configure CORS for different environments  
+allowed_origins = ["https://mmdb-web.onrender.com"]
+
+# Add localhost for development if not in production
+if os.getenv('FLASK_ENV') == 'development':
+    allowed_origins.append("http://localhost:5173")
 
 # Always add frontend URL if it's set and not already in the list
 frontend_url = os.getenv('FRONTEND_URL')
@@ -39,8 +43,8 @@ CORS(
 
 # Configure Flask app
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'your-super-secret-key')
-# Default to development database URL if not set in environment
-DATABASE_URL = os.getenv('DATABASE_URL', 'postgresql://postgres:123456@localhost:5432/movies_db')
+# Use production database by default, fallback to localhost for development
+DATABASE_URL = os.getenv('DATABASE_URL', 'postgresql://movies_user:jfR7w5dDKVkAqUBVnYa8JZKIAV8K2WXk@dpg-d2b3c4umcj7s73e51pag-a.virginia-postgres.render.com/movie_db_2vtg')
 # Ensure database URL has the correct prefix
 if DATABASE_URL.startswith('postgres://'):
     DATABASE_URL = DATABASE_URL.replace('postgres://', 'postgresql://', 1)

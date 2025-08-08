@@ -5,7 +5,7 @@ import axios from 'axios';
 import MovieCard from '../components/MovieCard.vue';
 import MovieFilters from '../components/MovieFilters.vue';
 
-const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_BASE_URL || 'https://mmdb-f1b3.onrender.com/api';
 console.log('MovieListView API URL being used:', API_URL);
 
 const route = useRoute();

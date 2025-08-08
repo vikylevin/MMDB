@@ -45,7 +45,7 @@ const testResult = ref('')
 // Get actual API URL from the axios instance
 onMounted(() => {
   // Get the API URL that's actually being used
-  const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api'
+  const API_URL = import.meta.env.VITE_API_BASE_URL || 'https://mmdb-f1b3.onrender.com/api'
   actualApiUrl.value = API_URL
   
   // Check authentication

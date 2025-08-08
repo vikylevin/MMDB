@@ -50,7 +50,7 @@ import MovieCard from '../components/MovieCard.vue'
 const router = useRouter()
 
 // Use the same API_URL logic as in api.js
-const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api'
+const API_URL = import.meta.env.VITE_API_BASE_URL || 'https://mmdb-f1b3.onrender.com/api'
 
 // Movie lists for different sections
 const popularMovies = ref([])

@@ -94,7 +94,7 @@
 import { ref, onMounted, computed } from 'vue';
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_BASE_URL || 'https://mmdb-f1b3.onrender.com/api';
 console.log('MovieFilters API URL being used:', API_URL);
 
 const emit = defineEmits(['filtersChanged']);

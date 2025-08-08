@@ -1,8 +1,8 @@
 import axios from 'axios';
 import { setAuthState } from '../stores/auth';
 
-// Use environment variable for API URL, fallback to localhost for development
-const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+// Use environment variable for API URL, fallback to production for safety
+const API_URL = import.meta.env.VITE_API_BASE_URL || 'https://mmdb-f1b3.onrender.com/api';
 
 // Debug: Log the API URL to console
 console.log('Environment:', import.meta.env.MODE);

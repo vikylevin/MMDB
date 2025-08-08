@@ -7,7 +7,7 @@ module.exports = defineConfig({
     host: 'localhost',
     proxy: {
       '/api': {
-        target: process.env.VITE_API_BASE_URL || 'http://localhost:5000',
+        target: process.env.VITE_API_BASE_URL || 'https://mmdb-f1b3.onrender.com',
         changeOrigin: true
       }
     }

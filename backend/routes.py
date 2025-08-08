@@ -3,7 +3,6 @@ import requests
 from datetime import datetime
 from flask import Blueprint, jsonify, request, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity, create_access_token
-from flask_cors import cross_origin
 from models import db, User, Movie, Rating, Review, WatchLaterItem, WatchedItem, LikedItem, ReviewLike, ReviewComment
 from tmdb import fetch_movie_details, get_popular_movies, get_top_rated_movies, get_upcoming_movies, get_movie_genres, get_available_languages, get_user_region
 
@@ -103,7 +102,7 @@ def get_movie_reviews(movie_id):
     return jsonify(review_list)
 
 @movie_bp.route('/<int:movie_id>/reviews', methods=['POST'])
-@cross_origin(origins=["http://localhost:5173"], supports_credentials=True)
+
 @jwt_required()
 def submit_movie_review(movie_id):
     """
@@ -169,13 +168,13 @@ def submit_movie_review(movie_id):
 
 # Add a catch-all OPTIONS handler for all /api/user/* routes
 @user_bp.route('/<path:path>', methods=['OPTIONS'])
-@cross_origin(origins=["http://localhost:5173"], supports_credentials=True)
+
 def user_options(path):
     return '', 200
 
  # Watched movies API
 @user_bp.route('/watched', methods=['GET', 'OPTIONS'])
-@cross_origin(origins=["http://localhost:5173"], supports_credentials=True)
+
 @jwt_required()
 def get_watched():
     """
@@ -229,7 +228,7 @@ def get_watched():
     return jsonify(movies)
 # --- Toggle watched status for a movie for the current user ---
 @user_bp.route('/watched', methods=['POST'])
-@cross_origin(origins=["http://localhost:5173"], supports_credentials=True)
+
 @jwt_required()
 def toggle_watched():
     """
@@ -426,7 +425,7 @@ def get_available_languages_route():
 
 # --- Get all liked movies for the current user ---
 @user_bp.route('/likes', methods=['GET', 'OPTIONS'])
-@cross_origin(origins=["http://localhost:5173"], supports_credentials=True)
+
 @jwt_required()
 def get_likes():
     """
@@ -480,7 +479,7 @@ def get_likes():
     return jsonify(movies)
 
 @user_bp.route('/likes', methods=['POST'])
-@cross_origin(origins=["http://localhost:5173"], supports_credentials=True)
+
 @jwt_required()
 def toggle_like():
     """
@@ -653,7 +652,7 @@ def toggle_watch_later(movie_id):
     return jsonify({'message': 'Added to watch later', 'added': True})
 
 @user_bp.route('/watch-later', methods=['GET', 'OPTIONS'])
-@cross_origin(origins=["http://localhost:5173"], supports_credentials=True)
+
 @jwt_required()
 def get_watch_later():
     user_id = get_jwt_identity()
@@ -692,7 +691,7 @@ def get_watch_later():
 
 # Backward compatibility aliases
 @user_bp.route('/watchlist', methods=['GET', 'OPTIONS'])
-@cross_origin(origins=["http://localhost:5173"], supports_credentials=True)
+
 @jwt_required()
 def get_watchlist():
     """Backward compatibility alias for get_watch_later"""
@@ -705,7 +704,7 @@ def toggle_watchlist(movie_id):
     return toggle_watch_later(movie_id)
 
 @user_bp.route('/profile', methods=['GET', 'OPTIONS'])
-@cross_origin(origins=["http://localhost:5173"], supports_credentials=True)
+
 @jwt_required()
 def get_profile():
     user_id = get_jwt_identity()
@@ -721,7 +720,7 @@ def get_profile():
 
 # --- Movie rating routes ---
 @movie_bp.route('/<int:movie_id>/rate', methods=['POST', 'OPTIONS'])
-@cross_origin(origins=["http://localhost:5173"], supports_credentials=True)
+
 @jwt_required()
 def rate_movie(movie_id):
     """
@@ -803,7 +802,7 @@ def rate_movie(movie_id):
     })
 
 @movie_bp.route('/<int:movie_id>/rating', methods=['GET', 'OPTIONS'])
-@cross_origin(origins=["http://localhost:5173"], supports_credentials=True)
+
 @jwt_required()
 def get_movie_rating(movie_id):
     """
@@ -827,7 +826,7 @@ def get_movie_rating(movie_id):
     })
 
 @user_bp.route('/reviews', methods=['GET', 'OPTIONS'])
-@cross_origin(origins=["http://localhost:5173"], supports_credentials=True)
+
 @jwt_required()
 def get_user_reviews():
     """
@@ -885,7 +884,7 @@ def get_user_reviews():
 
 # Review interaction routes
 @movie_bp.route('/reviews/<int:review_id>/like', methods=['POST'])
-@cross_origin(origins=["http://localhost:5173"], supports_credentials=True)
+
 @jwt_required()
 def toggle_review_like(review_id):
     """
@@ -951,7 +950,7 @@ def get_review_comments(review_id):
     return jsonify(comment_list)
 
 @movie_bp.route('/reviews/<int:review_id>/comments', methods=['POST'])
-@cross_origin(origins=["http://localhost:5173"], supports_credentials=True)
+
 @jwt_required()
 def add_review_comment(review_id):
     """
@@ -990,7 +989,7 @@ def add_review_comment(review_id):
 
 # Review management routes
 @movie_bp.route('/reviews/<int:review_id>', methods=['PUT'])
-@cross_origin(origins=["http://localhost:5173"], supports_credentials=True)
+
 @jwt_required()
 def update_review(review_id):
     """
@@ -1036,7 +1035,7 @@ def update_review(review_id):
     })
 
 @movie_bp.route('/reviews/<int:review_id>', methods=['DELETE'])
-@cross_origin(origins=["http://localhost:5173"], supports_credentials=True)
+
 @jwt_required()
 def delete_review(review_id):
     """
