@@ -22,8 +22,25 @@ def health_check():
         'tmdb_base_url': TMDB_BASE_URL,
         'flask_env': os.getenv('FLASK_ENV', 'development'),
         'frontend_url': os.getenv('FRONTEND_URL', 'not_set'),
-        'cors_origins': 'check CORS config in app.py'
+        'cors_origins': 'check CORS config in app.py',
+        'database_url_configured': bool(os.getenv('DATABASE_URL'))
     })
+
+# Database initialization endpoint (for production setup)
+@movie_bp.route('/init-db', methods=['POST'])
+def initialize_database():
+    """Initialize database tables - use this once for production setup"""
+    try:
+        db.create_all()
+        return jsonify({
+            'status': 'success',
+            'message': 'Database tables created successfully'
+        })
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': f'Failed to create database tables: {str(e)}'
+        }), 500
 
 # TMDB configuration
 TMDB_BASE_URL = os.getenv('TMDB_BASE_URL', 'https://api.themoviedb.org/3')
