@@ -12,6 +12,17 @@ auth_bp = Blueprint('auth', __name__)
 movie_bp = Blueprint('movie', __name__)
 user_bp = Blueprint('user', __name__)
 
+# Health check endpoint
+@movie_bp.route('/health', methods=['GET'])
+def health_check():
+    """Health check endpoint with environment variable status."""
+    return jsonify({
+        'status': 'healthy',
+        'tmdb_api_key_configured': bool(TMDB_API_KEY),
+        'tmdb_base_url': TMDB_BASE_URL,
+        'flask_env': os.getenv('FLASK_ENV', 'development')
+    })
+
 # TMDB configuration
 TMDB_BASE_URL = os.getenv('TMDB_BASE_URL', 'https://api.themoviedb.org/3')
 TMDB_API_KEY = os.getenv('TMDB_API_KEY')
