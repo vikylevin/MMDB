@@ -140,24 +140,25 @@
         <div class="profile-actions">
           <el-button 
             v-if="!isEditing" 
-            type="primary" 
             @click="startEditing"
             :icon="Edit"
+            class="edit-profile-btn"
           >
             Edit Profile
           </el-button>
           <div v-else class="edit-actions">
             <el-button 
-              type="primary" 
               @click="saveProfile"
               :loading="isSaving"
               :icon="Check"
+              class="save-changes-btn"
             >
               Save Changes
             </el-button>
             <el-button 
               @click="cancelEditing"
               :icon="Close"
+              class="cancel-edit-btn"
             >
               Cancel
             </el-button>
@@ -166,7 +167,7 @@
       </div>
       <div v-else class="login-prompt">
         <p>Please log in to view your profile</p>
-        <el-button type="primary" @click="$router.push('/login')">Login</el-button>
+        <el-button @click="$router.push('/login')" class="login-btn">Login</el-button>
       </div>
     </el-card>
 
@@ -299,7 +300,7 @@
           <div v-else class="no-movies">
             <el-icon><Star /></el-icon>
             <p>No liked movies yet</p>
-            <el-button @click="$router.push('/movies/popular')">Discover Movies</el-button>
+            <el-button @click="$router.push('/movies/popular')" class="discover-movies-btn">Discover Movies</el-button>
           </div>
         </div>
         
@@ -311,7 +312,7 @@
           <div v-else class="no-movies">
             <el-icon><Clock /></el-icon>
             <p>No movies in watch later list</p>
-            <el-button @click="$router.push('/movies/popular')">Add Movies</el-button>
+            <el-button @click="$router.push('/movies/popular')" class="add-movies-btn">Add Movies</el-button>
           </div>
         </div>
 
@@ -323,7 +324,7 @@
           <div v-else class="no-movies">
             <el-icon><Clock /></el-icon>
             <p>No movies in watch later list</p>
-            <el-button @click="$router.push('/movies/popular')">Add Movies</el-button>
+            <el-button @click="$router.push('/movies/popular')" class="add-movies-btn">Add Movies</el-button>
           </div>
         </div>
         
@@ -335,7 +336,7 @@
           <div v-else class="no-movies">
             <el-icon><Check /></el-icon>
             <p>No watched movies yet</p>
-            <el-button @click="$router.push('/movies/popular')">Start Watching</el-button>
+            <el-button @click="$router.push('/movies/popular')" class="start-watching-btn">Start Watching</el-button>
           </div>
         </div>
 
@@ -376,9 +377,9 @@
                 <div class="review-actions">
                   <el-button 
                     size="small" 
-                    type="primary" 
                     @click="goToMovieDetailAndEdit(review.movie_id)"
                     :icon="Edit"
+                    class="edit-review-btn"
                   >
                     Edit Review
                   </el-button>
@@ -389,7 +390,7 @@
           <div v-else class="no-movies">
             <el-icon><Star /></el-icon>
             <p>No reviews yet</p>
-            <el-button @click="$router.push('/movies/popular')">Rate Some Movies</el-button>
+            <el-button @click="$router.push('/movies/popular')" class="rate-movies-btn">Rate Some Movies</el-button>
           </div>
         </div>
       </div>
@@ -1005,7 +1006,7 @@ onMounted(() => {
 
 .movies-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap: 1rem;
   justify-items: center;
 }
@@ -1163,6 +1164,108 @@ onMounted(() => {
 
 .review-actions .el-button {
   font-size: 0.85rem;
+}
+
+/* Unified edit review button styling to match movie detail page theme */
+.review-actions .edit-review-btn {
+  background: #2c3e50 !important;
+  border-color: #2c3e50 !important;
+  color: white !important;
+  font-weight: 600 !important;
+  border-radius: 6px !important;
+  padding: 8px 16px !important;
+  transition: all 0.3s ease !important;
+}
+
+.review-actions .edit-review-btn:hover {
+  background: #34495e !important;
+  border-color: #34495e !important;
+  color: white !important;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(44, 62, 80, 0.3);
+}
+
+/* Unified styling for the rate movies button */
+.no-movies .rate-movies-btn {
+  background: #2c3e50 !important;
+  border-color: #2c3e50 !important;
+  color: white !important;
+  font-weight: 600 !important;
+  border-radius: 6px !important;
+  padding: 8px 16px !important;
+  transition: all 0.3s ease !important;
+}
+
+.no-movies .rate-movies-btn:hover {
+  background: #34495e !important;
+  border-color: #34495e !important;
+  color: white !important;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(44, 62, 80, 0.3);
+}
+
+/* Unified styling for Personal Information module buttons */
+.profile-actions .edit-profile-btn,
+.edit-actions .save-changes-btn,
+.login-prompt .login-btn {
+  background: #2c3e50 !important;
+  border-color: #2c3e50 !important;
+  color: white !important;
+  font-weight: 600 !important;
+  border-radius: 6px !important;
+  padding: 8px 16px !important;
+  transition: all 0.3s ease !important;
+}
+
+.profile-actions .edit-profile-btn:hover,
+.edit-actions .save-changes-btn:hover,
+.login-prompt .login-btn:hover {
+  background: #34495e !important;
+  border-color: #34495e !important;
+  color: white !important;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(44, 62, 80, 0.3);
+}
+
+.edit-actions .cancel-edit-btn {
+  background: #f8f9fa !important;
+  border-color: #dee2e6 !important;
+  color: #6c757d !important;
+  font-weight: 500 !important;
+  border-radius: 6px !important;
+  padding: 8px 16px !important;
+  transition: all 0.3s ease !important;
+}
+
+.edit-actions .cancel-edit-btn:hover {
+  background: #e9ecef !important;
+  border-color: #adb5bd !important;
+  color: #495057 !important;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Unified styling for all other action buttons in profile */
+.no-movies .discover-movies-btn,
+.no-movies .add-movies-btn,
+.no-movies .start-watching-btn {
+  background: #2c3e50 !important;
+  border-color: #2c3e50 !important;
+  color: white !important;
+  font-weight: 600 !important;
+  border-radius: 6px !important;
+  padding: 8px 16px !important;
+  transition: all 0.3s ease !important;
+}
+
+.no-movies .discover-movies-btn:hover,
+.no-movies .add-movies-btn:hover,
+.no-movies .start-watching-btn:hover {
+  background: #34495e !important;
+  border-color: #34495e !important;
+  color: white !important;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(44, 62, 80, 0.3);
 }
 
 /* Responsive design */

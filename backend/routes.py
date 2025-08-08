@@ -354,7 +354,7 @@ def get_movies_by_category(category):
         return jsonify({'error': str(e)}), 500
 
 @movie_bp.route('/genres', methods=['GET'])
-def get_movie_genres():
+def get_movie_genres_endpoint():
     """Return list of movie genres from TMDB."""
     try:
         data = get_movie_genres()

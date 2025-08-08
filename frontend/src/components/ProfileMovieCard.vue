@@ -57,7 +57,7 @@ const navigateToDetail = () => {
 .profile-movie-card {
   transition: transform 0.3s ease;
   height: 320px;
-  width: 200px;
+  width: 165px;
   margin: 0 auto;
   cursor: pointer;
   background: var(--card-bg);
@@ -78,12 +78,15 @@ const navigateToDetail = () => {
   height: 250px;
   overflow: hidden;
   background: var(--background-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .movie-poster {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   object-position: center;
   background: var(--background-color);
 }

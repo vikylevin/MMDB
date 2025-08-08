@@ -205,11 +205,15 @@ onMounted(() => {
 }
 
 .movie-grid {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 20px;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr); /* 5 columns for better space utilization */
+  gap: 16px;
   margin-bottom: 1.5rem;
+  padding: 0 1rem;
+  justify-items: center;
+  max-width: 1200px; /* Limit maximum width for better layout */
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .movie-skeleton {
@@ -241,6 +245,40 @@ onMounted(() => {
   margin-top: 1rem;
   color: var(--text-color);
   opacity: 0.7;
+}
+
+/* Search page specific MovieCard overrides */
+.movie-grid :deep(.movie-card) {
+  height: 450px; /* Reduced from default 520px */
+  width: 200px; /* Slightly smaller width for 5-column layout */
+}
+
+.movie-grid :deep(.poster-container) {
+  height: 270px; /* Reduced poster height proportionally */
+}
+
+.movie-grid :deep(.movie-info) {
+  padding: 6px 10px; /* Reduced padding */
+  min-height: 90px; /* Reduced info section height */
+}
+
+.movie-grid :deep(.user-actions) {
+  gap: 12px; /* Slightly reduced gap between action buttons */
+}
+
+.movie-grid :deep(.watch-later-btn),
+.movie-grid :deep(.like-btn),
+.movie-grid :deep(.watched-btn) {
+  width: 32px; /* Slightly smaller buttons */
+  min-width: 32px;
+  max-width: 32px;
+  height: 32px;
+}
+
+.movie-grid :deep(.watch-later-btn .el-icon),
+.movie-grid :deep(.like-btn .el-icon),
+.movie-grid :deep(.watched-btn .el-icon) {
+  font-size: 14px; /* Smaller icon size */
 }
 
 </style>

@@ -23,8 +23,8 @@
               {{ genreItem.name }}
             </el-tag>
           </template>
-          <!-- Debug info -->
-          <div v-if="genres.length === 0" style="color: #999; font-size: 12px; padding: 8px;">
+          <!-- Loading state -->
+          <div v-if="genres.length === 0" class="loading-text">
             Loading genres...
           </div>
         </div>
@@ -132,9 +132,12 @@ const ratingMarks = ref({
 
 const fetchGenres = async () => {
   try {
+    console.log('Fetching genres from API...');
     const response = await axios.get('http://127.0.0.1:5000/api/movie/genres');
+    console.log('Genres API response:', response.data);
     if (response.data && response.data.genres) {
       genres.value = response.data.genres;
+      console.log('Genres loaded:', genres.value.length);
       // Check for any null or undefined IDs
       genres.value.forEach((genre, index) => {
         if (!genre || genre.id === null || genre.id === undefined) {
@@ -465,6 +468,14 @@ onMounted(() => {
 
 .filter-section .el-button i {
   margin-right: 6px;
+}
+
+.loading-text {
+  color: #999;
+  font-size: 12px;
+  padding: 8px;
+  text-align: center;
+  font-style: italic;
 }
 
 /* Responsive Design */

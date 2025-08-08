@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch, nextTick, inject } from 'vue';
 import { useRouter } from 'vue-router';
-import { StarFilled, Clock, View } from '@element-plus/icons-vue';
+import { StarFilled, Clock, View, Check } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
 import { isAuthenticated, toggleWatchLater, toggleLike, toggleWatched, getLikes, getWatchLater, getWatched, rateMovie, getMovieRating } from '../services/api';
 import { isMovieLiked, isMovieInWatchLater, isMovieWatched, updateMovieStatus, isInitialized } from '../stores/movieStatus';
@@ -348,7 +348,10 @@ const handleToggleWatchlist = handleToggleWatchLater;
             @click="handleToggleWatchLater"
             class="watch-later-btn"
           >
-            <el-icon><Clock /></el-icon>
+            <el-icon>
+              <Check v-if="addedToWatchLater" />
+              <Clock v-else />
+            </el-icon>
           </el-button>
         </el-tooltip>
         <el-tooltip content="Watched" placement="top">
@@ -380,9 +383,7 @@ const handleToggleWatchlist = handleToggleWatchLater;
 .movie-card {
   transition: transform 0.3s ease;
   height: 520px; /* Increased from 500px to provide more space for action buttons */
-  width: 100%; /* Use 100% width instead of fixed width */
-  min-width: 220px; /* Increased minimum width */
-  max-width: 280px; /* Increased maximum width */
+  width: 220px; /* Fixed width instead of 100% to ensure consistency */
   margin-left: auto;
   margin-right: auto; /* Center the card in its container */
   background: var(--card-bg);
@@ -549,7 +550,7 @@ const handleToggleWatchlist = handleToggleWatchLater;
   line-height: 1.3;
 }
 
-/* Title scroll animation container */
+/* Title scroll animation container - for long titles */
 .movie-card:hover .movie-title[data-overflow="true"] {
   position: relative;
   overflow: hidden;
