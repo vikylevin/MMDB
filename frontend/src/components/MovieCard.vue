@@ -250,6 +250,10 @@ const handleRating = async (value) => {
       throw new Error('Invalid movie ID');
     }
     
+    console.log(`Attempting to rate movie ${movieId} with rating ${value}`);
+    console.log(`API Base URL: ${import.meta.env.VITE_API_BASE_URL}`);
+    console.log(`Token exists: ${!!localStorage.getItem('access_token')}`);
+    
     await rateMovie(movieId, value);
     userRating.value = value;
     
@@ -272,9 +276,24 @@ const handleRating = async (value) => {
     // Let CSS handle star colors naturally
   } catch (error) {
     console.error('Error saving rating:', error);
+    console.error('Error details:', {
+      message: error.message,
+      response: error.response?.data,
+      status: error.response?.status,
+      url: error.config?.url
+    });
+    
     userRating.value = 0; // Reset rating on error
+    
+    let errorMessage = 'Failed to save rating';
+    if (error.response?.status === 401) {
+      errorMessage = 'Please log in again to rate movies';
+    } else if (error.request) {
+      errorMessage = 'Network error - please check your connection';
+    }
+    
     ElMessage({
-      message: 'Failed to save rating',
+      message: errorMessage,
       type: 'error',
       duration: 2000,
       showClose: true
