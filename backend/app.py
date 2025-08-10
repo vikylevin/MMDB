@@ -43,8 +43,11 @@ CORS(
 
 # Configure Flask app
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'your-super-secret-key')
-# Use production database by default, fallback to localhost for development
-DATABASE_URL = os.getenv('DATABASE_URL', 'postgresql://movies_user:jfR7w5dDKVkAqUBVnYa8JZKIAV8K2WXk@dpg-d2b3c4umcj7s73e51pag-a.virginia-postgres.render.com/movie_db_2vtg')
+# Use environment variable for database URL - never hardcode credentials!
+DATABASE_URL = os.getenv('DATABASE_URL')
+if not DATABASE_URL:
+    # Fallback for local development - use local database
+    DATABASE_URL = 'postgresql://localhost/movie_db'
 # Ensure database URL has the correct prefix
 if DATABASE_URL.startswith('postgres://'):
     DATABASE_URL = DATABASE_URL.replace('postgres://', 'postgresql://', 1)
@@ -81,6 +84,25 @@ from routes import user_bp, auth_bp, movie_bp
 app.register_blueprint(user_bp, url_prefix='/api/user')
 app.register_blueprint(auth_bp, url_prefix='/api/auth')
 app.register_blueprint(movie_bp, url_prefix='/api/movie')
+
+# Health check endpoint
+@app.route('/api/health', methods=['GET'])
+def health_check():
+    """Health check endpoint to verify database connection"""
+    try:
+        # Test database connection without exposing sensitive info
+        db.engine.execute('SELECT 1')
+        return {
+            'status': 'healthy',
+            'database': 'connected',
+            'environment': 'production' if os.getenv('DATABASE_URL') else 'development'
+        }
+    except Exception as e:
+        return {
+            'status': 'unhealthy',
+            'database': 'disconnected',
+            'error': 'Database connection failed'
+        }, 500
 
 # Create tables only when running directly (not during import)
 def create_tables():
