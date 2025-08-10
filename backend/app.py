@@ -43,7 +43,7 @@ CORS(
 
 # Configure Flask app
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'your-super-secret-key')
-# Use environment variable for database URL - never hardcode credentials!
+# Use environment variable for database URL
 DATABASE_URL = os.getenv('DATABASE_URL')
 if not DATABASE_URL:
     # Fallback for local development - use local database
