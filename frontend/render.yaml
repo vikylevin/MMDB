@@ -1,5 +1,10 @@
-# Build command: npm run build
-# Publish directory: dist
-
-# SPA redirect rules for Render
-/*    /index.html   200
+services:
+  - type: web
+    name: mmdb-frontend
+    env: static
+    buildCommand: npm run build
+    staticPublishPath: ./dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html

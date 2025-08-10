@@ -2,7 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
 
 const router = createRouter({
-  history: createWebHistory(process.env.BASE_URL),
+  history: createWebHistory(import.meta.env.BASE_URL || '/'),
   routes: [
     {
       path: '/',
@@ -51,6 +51,16 @@ const router = createRouter({
       return { top: 0 }
     }
   }
+})
+
+// Add navigation guards for debugging
+router.beforeEach((to, from, next) => {
+  console.log(`Navigating from ${from.path} to ${to.path}`)
+  next()
+})
+
+router.onError((error) => {
+  console.error('Router error:', error)
 })
 
 export default router
