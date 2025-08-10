@@ -4,7 +4,6 @@ import {
   TrendCharts,
   Calendar,
   StarFilled,
-  ChatDotRound,
   DataAnalysis,
   Position,
   Message
@@ -72,17 +71,13 @@ const navigateToProfile = (tab) => {
         <div class="footer-section">
           <h4 class="section-title">Features</h4>
           <nav class="footer-nav">
-            <a href="/profile" class="footer-link" @click.prevent="navigateToProfile('watched')">
+            <a href="/profile" class="footer-link" @click.prevent="navigateToProfile('reviews')">
               <el-icon><Star /></el-icon>
               Personal Ratings
             </a>
             <a href="/profile" class="footer-link" @click.prevent="navigateToProfile('watch-later')">
               <el-icon><StarFilled /></el-icon>
               Watch Later
-            </a>
-            <a href="/profile" class="footer-link" @click.prevent="navigateToProfile('reviews')">
-              <el-icon><ChatDotRound /></el-icon>
-              Movie Reviews
             </a>
             <a href="/profile" class="footer-link" @click.prevent="navigateToProfile('statistics')">
               <el-icon><DataAnalysis /></el-icon>
