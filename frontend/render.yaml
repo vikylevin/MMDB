@@ -1,0 +1,5 @@
+# Build command: npm run build
+# Publish directory: dist
+
+# SPA redirect rules for Render
+/*    /index.html   200
