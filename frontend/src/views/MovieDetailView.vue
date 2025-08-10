@@ -42,6 +42,10 @@ const reviewComments = ref({});
 const showCommentForms = ref({});
 const commentTexts = ref({});
 
+// Comment editing state
+const editingCommentId = ref(null);
+const editCommentText = ref('');
+
 // Use global state for watch later status
 const isInWatchLater = computed(() => {
   return isMovieInWatchLater(Number(movieId.value));
@@ -352,6 +356,89 @@ const submitComment = async (reviewId) => {
   } catch (error) {
     console.error('Error submitting comment:', error);
     ElMessage.error('Failed to submit comment');
+  }
+};
+
+// Comment management functions
+const editComment = (comment) => {
+  editingCommentId.value = comment.id;
+  editCommentText.value = comment.comment;
+};
+
+const saveEditComment = async (commentId, reviewId) => {
+  if (!editCommentText.value.trim()) {
+    ElMessage.warning('Please enter a comment');
+    return;
+  }
+
+  try {
+    const response = await axios.put(`${API_URL}/review-comments/${commentId}`, {
+      comment: editCommentText.value.trim()
+    }, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('access_token')}`
+      }
+    });
+
+    // Update the comment in the local state
+    const comments = reviewComments.value[reviewId];
+    if (comments) {
+      const commentIndex = comments.findIndex(c => c.id === commentId);
+      if (commentIndex !== -1) {
+        comments[commentIndex] = { ...comments[commentIndex], ...response.data };
+      }
+    }
+
+    editingCommentId.value = null;
+    editCommentText.value = '';
+    ElMessage.success('Comment updated successfully');
+  } catch (error) {
+    console.error('Error updating comment:', error);
+    ElMessage.error('Failed to update comment');
+  }
+};
+
+const cancelEditComment = () => {
+  editingCommentId.value = null;
+  editCommentText.value = '';
+};
+
+const confirmDeleteComment = async (commentId, reviewId) => {
+  try {
+    await ElMessageBox.confirm(
+      'Are you sure you want to delete this comment? This action cannot be undone.',
+      'Delete Comment',
+      {
+        confirmButtonText: 'Delete',
+        cancelButtonText: 'Cancel',
+        type: 'warning',
+      }
+    );
+    
+    await axios.delete(`${API_URL}/review-comments/${commentId}`, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('access_token')}`
+      }
+    });
+    
+    // Remove comment from local state
+    const comments = reviewComments.value[reviewId];
+    if (comments) {
+      reviewComments.value[reviewId] = comments.filter(c => c.id !== commentId);
+    }
+
+    // Update comment count
+    const reviewIndex = reviews.value.findIndex(r => r.id === reviewId);
+    if (reviewIndex !== -1) {
+      reviews.value[reviewIndex].comment_count = Math.max(0, (reviews.value[reviewIndex].comment_count || 0) - 1);
+    }
+    
+    ElMessage.success('Comment deleted successfully');
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('Error deleting comment:', error);
+      ElMessage.error('Failed to delete comment');
+    }
   }
 };
 
@@ -737,9 +824,57 @@ onMounted(() => {
                   <div v-for="comment in reviewComments[review.id]" :key="comment.id" class="comment-item">
                     <div class="comment-header">
                       <span class="comment-author">{{ comment.username }}</span>
-                      <span class="comment-date">{{ formatDate(comment.created_at) }}</span>
+                      <div class="comment-header-right">
+                        <span class="comment-date">{{ formatDate(comment.created_at) }}</span>
+                        <!-- Edit/Delete buttons for comment authors -->
+                        <div v-if="currentUser && currentUser.username === comment.username" class="comment-management">
+                          <el-button 
+                            v-if="editingCommentId !== comment.id"
+                            size="small" 
+                            @click="editComment(comment)" 
+                            type="primary" 
+                            link
+                            class="comment-edit-btn"
+                          >
+                            <el-icon><Edit /></el-icon>
+                          </el-button>
+                          <el-button 
+                            v-if="editingCommentId !== comment.id"
+                            size="small" 
+                            @click="confirmDeleteComment(comment.id, review.id)" 
+                            type="danger" 
+                            link
+                            class="comment-delete-btn"
+                          >
+                            <el-icon><Delete /></el-icon>
+                          </el-button>
+                        </div>
+                      </div>
                     </div>
-                    <div class="comment-content">{{ comment.comment }}</div>
+                    
+                    <!-- Regular comment content -->
+                    <div v-if="editingCommentId !== comment.id" class="comment-content">
+                      {{ comment.comment }}
+                    </div>
+                    
+                    <!-- Edit comment form -->
+                    <div v-else class="edit-comment-form">
+                      <el-input
+                        v-model="editCommentText"
+                        type="textarea"
+                        :rows="2"
+                        placeholder="Edit your comment..."
+                        class="edit-comment-input"
+                      />
+                      <div class="edit-comment-actions">
+                        <el-button size="small" @click="saveEditComment(comment.id, review.id)" type="primary">
+                          Save
+                        </el-button>
+                        <el-button size="small" @click="cancelEditComment">
+                          Cancel
+                        </el-button>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
@@ -1368,6 +1503,12 @@ onMounted(() => {
   border-bottom: 1px solid #f1f3f4;
 }
 
+.comment-header-right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .comment-author {
   font-weight: 600;
   color: #333333;
@@ -1379,10 +1520,43 @@ onMounted(() => {
   color: #6c757d;
 }
 
+.comment-management {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.comment-edit-btn, .comment-delete-btn {
+  padding: 2px 4px !important;
+  font-size: 0.75rem !important;
+  min-width: auto !important;
+}
+
+.comment-edit-btn .el-icon, .comment-delete-btn .el-icon {
+  font-size: 12px !important;
+}
+
 .comment-content {
   color: #495057;
   line-height: 1.5;
   font-size: 0.9rem;
+}
+
+.edit-comment-form {
+  margin-top: 0.5rem;
+}
+
+.edit-comment-input {
+  margin-bottom: 0.5rem;
+}
+
+.edit-comment-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.edit-comment-actions .el-button {
+  font-size: 0.8rem !important;
+  padding: 4px 8px !important;
 }
 
 .add-comment-form {

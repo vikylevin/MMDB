@@ -987,6 +987,61 @@ def add_review_comment(review_id):
         'created_at': new_comment.created_at.isoformat()
     }), 201
 
+# Review comment management routes
+@movie_bp.route('/review-comments/<int:comment_id>', methods=['PUT'])
+@jwt_required()
+def update_review_comment(comment_id):
+    """
+    Update a review comment (only by the author)
+    """
+    user_id = get_jwt_identity()
+    data = request.get_json()
+    
+    # Check if comment exists and belongs to current user
+    comment = ReviewComment.query.filter_by(id=comment_id, user_id=user_id).first()
+    if not comment:
+        return jsonify({'error': 'Comment not found or you do not have permission to edit it'}), 404
+    
+    # Validate input
+    comment_text = data.get('comment', '').strip()
+    if not comment_text:
+        return jsonify({'error': 'Comment text is required'}), 400
+    
+    # Update comment
+    comment.comment = comment_text
+    comment.updated_at = db.func.now()
+    
+    db.session.commit()
+    
+    # Return updated comment
+    user = User.query.get(user_id)
+    return jsonify({
+        'id': comment.id,
+        'author': user.username if user else 'Unknown',
+        'comment': comment.comment,
+        'created_at': comment.created_at.isoformat(),
+        'updated_at': comment.updated_at.isoformat()
+    })
+
+@movie_bp.route('/review-comments/<int:comment_id>', methods=['DELETE'])
+@jwt_required()
+def delete_review_comment(comment_id):
+    """
+    Delete a review comment (only by the author)
+    """
+    user_id = get_jwt_identity()
+    
+    # Check if comment exists and belongs to current user
+    comment = ReviewComment.query.filter_by(id=comment_id, user_id=user_id).first()
+    if not comment:
+        return jsonify({'error': 'Comment not found or you do not have permission to delete it'}), 404
+    
+    # Delete the comment
+    db.session.delete(comment)
+    db.session.commit()
+    
+    return jsonify({'message': 'Comment deleted successfully'})
+
 # Review management routes
 @movie_bp.route('/reviews/<int:review_id>', methods=['PUT'])
 
