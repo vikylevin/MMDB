@@ -20,11 +20,15 @@ export default defineConfig({
   server: {
     host: '0.0.0.0',
     port: 5173,
-    historyApiFallback: true
+    historyApiFallback: {
+      index: '/index.html'
+    }
   },
   preview: {
     host: '0.0.0.0',
     port: 4173,
-    historyApiFallback: true
+    historyApiFallback: {
+      index: '/index.html'
+    }
   }
 })

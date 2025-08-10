@@ -25,7 +25,7 @@ services:
   - type: web
     name: mmdb-frontend
     env: static
-    buildCommand: "cd frontend && npm install && npm run build && echo 'Build completed, checking files:' && ls -la dist/ && echo 'Checking _redirects:' && cat dist/_redirects"
+    buildCommand: "cd frontend && npm install && npm run build && echo 'Build completed, checking files:' && ls -la dist/ && echo 'Checking _redirects:' && test -f dist/_redirects && cat dist/_redirects || echo '_redirects file not found'"
     staticPublishPath: "./frontend/dist"
     routes:
       - type: rewrite
