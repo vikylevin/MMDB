@@ -9,7 +9,7 @@ import { isAuthenticated, getCurrentUser, rateMovie, getMovieRating, toggleWatch
 import { currentUser as globalCurrentUser } from '../stores/auth';
 import { isMovieInWatchLater, updateMovieStatus, isMovieWatched, isMovieLiked } from '../stores/movieStatus';
 
-const API_URL = import.meta.env.VITE_API_BASE_URL || 'https://mmdb-backend.onrender.com/api';
+const API_URL = import.meta.env.VITE_API_BASE_URL || 'https://mmdb-f1b3.onrender.com/api';
 console.log('MovieDetailView API URL being used:', API_URL);
 
 const route = useRoute();
@@ -372,7 +372,7 @@ const saveEditComment = async (commentId, reviewId) => {
   }
 
   try {
-    const response = await axios.put(`${API_URL}/review-comments/${commentId}`, {
+    const response = await axios.put(`${API_URL}/movie/review-comments/${commentId}`, {
       comment: editCommentText.value.trim()
     }, {
       headers: {
@@ -415,7 +415,7 @@ const confirmDeleteComment = async (commentId, reviewId) => {
       }
     );
     
-    await axios.delete(`${API_URL}/review-comments/${commentId}`, {
+    await axios.delete(`${API_URL}/movie/review-comments/${commentId}`, {
       headers: {
         Authorization: `Bearer ${localStorage.getItem('access_token')}`
       }
