@@ -176,25 +176,42 @@ def get_available_languages():
 def get_user_region(request=None):
     """
     Get user's region for localized content based on IP address.
-    Returns GB (UK) as default for better movie content availability.
     
     Args:
-        request: Flask request object to extract IP from (for future implementation)
+        request: Flask request object to extract IP from
     
     Returns:
         str: Two-letter country code (ISO 3166-1 alpha-2)
     """
-    # For now, return GB (UK) as default since it has good movie content
-    # This can be enhanced later with actual IP geolocation:
-    # - Use IP geolocation services (like ipapi.co, geoip2, etc.)
-    # - Check request.environ.get('HTTP_X_FORWARDED_FOR') for real IP in production
-    # - Parse user's browser Accept-Language header
-    # - Allow users to set their preferred region in profile
-    
     if request:
-        # Future implementation: extract and geolocate IP
-        # ip = request.environ.get('HTTP_X_FORWARDED_FOR', request.remote_addr)
-        # return geolocate_ip(ip)
-        pass
+        try:
+            # Get real IP address, considering proxies and load balancers
+            ip = request.environ.get('HTTP_X_FORWARDED_FOR', 
+                                   request.environ.get('HTTP_X_REAL_IP', 
+                                                     request.remote_addr))
+            if ip:
+                # Take the first IP if there are multiple (comma-separated)
+                ip = ip.split(',')[0].strip()
+                
+                # Skip local/private IPs
+                if not (ip.startswith('127.') or ip.startswith('192.168.') or 
+                       ip.startswith('10.') or ip.startswith('172.') or 
+                       ip == 'localhost'):
+                    
+                    # Use a free IP geolocation service
+                    import requests
+                    try:
+                        response = requests.get(f'http://ip-api.com/json/{ip}', timeout=2)
+                        if response.status_code == 200:
+                            data = response.json()
+                            if data.get('status') == 'success':
+                                country_code = data.get('countryCode', 'US')
+                                print(f"Detected user region: {country_code} for IP: {ip}")
+                                return country_code
+                    except Exception as e:
+                        print(f"IP geolocation failed: {e}")
+        except Exception as e:
+            print(f"Error getting user region: {e}")
     
-    return 'GB'  # Default to UK for better movie availability
+    # Default fallback regions for better movie content
+    return 'US'  # Default to US for best movie availability

@@ -6,6 +6,7 @@ import { ElMessage, ElMessageBox } from 'element-plus';
 import { Star, StarFilled, Clock, Calendar, MessageBox, Edit, Delete, ChatDotRound, Check } from '@element-plus/icons-vue';
 import { isAuthenticated, getCurrentUser, rateMovie, getMovieRating, toggleWatchLater, toggleWatched, toggleLike,
          submitReview, getMovieReviews, toggleReviewLike, addReviewComment, getReviewComments, updateReview, deleteReview } from '../services/api';
+import { currentUser as globalCurrentUser } from '../stores/auth';
 import { isMovieInWatchLater, updateMovieStatus, isMovieWatched, isMovieLiked } from '../stores/movieStatus';
 
 const API_URL = import.meta.env.VITE_API_BASE_URL || 'https://mmdb-f1b3.onrender.com/api';
@@ -26,7 +27,8 @@ const userReview = ref({
 const reviewSubmitting = ref(false);
 const showReviewForm = ref(false);
 const userRating = ref(0);
-const currentUser = ref(null);
+// Use global current user instead of local ref
+const currentUser = globalCurrentUser;
 
 // Review editing state
 const editingReviewId = ref(null);
@@ -58,9 +60,8 @@ const posterBaseUrl = 'https://image.tmdb.org/t/p/w500';
 
 // Check if user is authenticated
 const checkAuthentication = () => {
-  if (isAuthenticated()) {
-    currentUser.value = getCurrentUser();
-  }
+  // currentUser is now global reactive state, no need to set manually
+  return isAuthenticated();
 };
 
 // Load user's rating for this movie
