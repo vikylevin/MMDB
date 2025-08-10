@@ -23,7 +23,7 @@ services:
         sync: false # You'll need to set this manually in Render dashboard
 
   - type: web
-    name: mmdb-frontend
+    name: mmdb-web
     env: static
     buildCommand: "cd frontend && npm install && npm run build && echo 'Build completed, checking files:' && ls -la dist/ && echo 'Checking _redirects:' && test -f dist/_redirects && cat dist/_redirects || echo '_redirects file not found'"
     staticPublishPath: "./frontend/dist"
