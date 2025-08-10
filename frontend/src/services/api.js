@@ -2,7 +2,7 @@ import axios from 'axios';
 import { setAuthState } from '../stores/auth';
 
 // Use environment variable for API URL, fallback to production for safety
-const API_URL = import.meta.env.VITE_API_BASE_URL || 'https://mmdb-f1b3.onrender.com/api';
+const API_URL = import.meta.env.VITE_API_BASE_URL || 'https://mmdb-backend.onrender.com/api';
 
 // Create axios instance with base configuration
 const api = axios.create({

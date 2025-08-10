@@ -9,7 +9,7 @@ import { isAuthenticated, getCurrentUser, rateMovie, getMovieRating, toggleWatch
 import { currentUser as globalCurrentUser } from '../stores/auth';
 import { isMovieInWatchLater, updateMovieStatus, isMovieWatched, isMovieLiked } from '../stores/movieStatus';
 
-const API_URL = import.meta.env.VITE_API_BASE_URL || 'https://mmdb-f1b3.onrender.com/api';
+const API_URL = import.meta.env.VITE_API_BASE_URL || 'https://mmdb-backend.onrender.com/api';
 console.log('MovieDetailView API URL being used:', API_URL);
 
 const route = useRoute();

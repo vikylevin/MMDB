@@ -5,7 +5,7 @@ import axios from 'axios';
 import MovieCard from '../components/MovieCard.vue';
 import { Search } from '@element-plus/icons-vue';
 
-const API_URL = import.meta.env.VITE_API_BASE_URL || 'https://mmdb-f1b3.onrender.com/api';
+const API_URL = import.meta.env.VITE_API_BASE_URL || 'https://mmdb-backend.onrender.com/api';
 console.log('SearchResultsView API URL being used:', API_URL);
 
 const route = useRoute();

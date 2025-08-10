@@ -1,3 +1,2 @@
-# SPA fallback for client-side routing
-/api/*  https://mmdb-f1b3.onrender.com/api/:splat  200
+# Handle SPA routing - all non-API requests go to index.html
 /*      /index.html                                200

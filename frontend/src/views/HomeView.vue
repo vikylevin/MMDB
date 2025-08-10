@@ -121,7 +121,23 @@ const fetchUpcomingMovies = async () => {
 }
 
 // Initialize all sections
-onMounted(() => {
+onMounted(async () => {
+  // First test backend connection
+  try {
+    console.log('Testing backend connection...')
+    const healthResponse = await axios.get(`${API_URL}/health`)
+    console.log('Backend health check:', healthResponse.data)
+  } catch (error) {
+    console.error('Backend health check failed:', error)
+    console.error('Error details:', {
+      message: error.message,
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      data: error.response?.data
+    })
+  }
+  
+  // Then fetch movies
   fetchPopularMovies()
   fetchTopRatedMovies()
   fetchUpcomingMovies()
