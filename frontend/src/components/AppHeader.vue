@@ -72,32 +72,33 @@ const handleLogout = () => {
 </script>
 
 <template>
-  <header class="app-header">
-    <div class="header-container">
-      <div class="left-section">
-        <div class="logo-container">
-          <router-link to="/" class="logo">
-            <span class="logo-text">MMDb</span>
-          </router-link>
-        </div>
+  <div class="header-wrapper">
+    <header class="app-header">
+      <div class="header-container">
+        <div class="left-section">
+          <div class="logo-container">
+            <router-link to="/" class="logo">
+              <span class="logo-text">MMDb</span>
+            </router-link>
+          </div>
 
-        <nav class="main-nav">
-          <ul>
-            <li class="nav-item">
-              <router-link to="/" class="nav-link">Home</router-link>
-            </li>
-            <li class="nav-item">
-              <router-link to="/movies/popular" class="nav-link">Popular</router-link>
-            </li>
-            <li class="nav-item">
-              <router-link to="/movies/top-rated" class="nav-link">Top Rated</router-link>
-            </li>
-            <li class="nav-item">
-              <router-link to="/movies/upcoming" class="nav-link">Upcoming</router-link>
-            </li>
-          </ul>
-        </nav>
-      </div>
+          <nav class="main-nav">
+            <ul>
+              <li class="nav-item">
+                <router-link to="/" class="nav-link">Home</router-link>
+              </li>
+              <li class="nav-item">
+                <router-link to="/movies/popular" class="nav-link">Popular</router-link>
+              </li>
+              <li class="nav-item">
+                <router-link to="/movies/top-rated" class="nav-link">Top Rated</router-link>
+              </li>
+              <li class="nav-item">
+                <router-link to="/movies/upcoming" class="nav-link">Upcoming</router-link>
+              </li>
+            </ul>
+          </nav>
+        </div>
 
       <div class="right-section">
         <div class="search-container" :class="{ 'expanded': isSearchExpanded }">
@@ -150,19 +151,24 @@ const handleLogout = () => {
         </div>
       </div>
     </div>
-    
-    <!-- Add divider line below header -->
-    <el-divider class="header-divider" />
   </header>
+  
+  <!-- Add divider line below header -->
+  <div class="header-divider-container">
+    <el-divider class="header-divider" />
+  </div>
+  </div>
 </template>
 
 <style scoped>
-.app-header {
+.header-wrapper {
   position: sticky;
   top: 0;
-  left: 0;
-  right: 0;
   z-index: 1000;
+  background-color: var(--bg-color);
+}
+
+.app-header {
   background-color: var(--bg-color);
   border-bottom: 1px solid var(--border-color);
   width: 100%;
@@ -321,6 +327,10 @@ const handleLogout = () => {
 }
 
 /* Header divider styling */
+.header-divider-container {
+  background-color: var(--bg-color);
+}
+
 .header-divider {
   margin: 0;
   border-color: var(--border-color, #e5e7eb);
