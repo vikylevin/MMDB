@@ -150,6 +150,9 @@ const handleLogout = () => {
         </div>
       </div>
     </div>
+    
+    <!-- Add divider line below header -->
+    <el-divider class="header-divider" />
   </header>
 </template>
 
@@ -315,6 +318,16 @@ const handleLogout = () => {
 :deep(.el-button--primary:focus) {
   background-color: #2c3e50 !important;
   border-color: #34495e !important;
+}
+
+/* Header divider styling */
+.header-divider {
+  margin: 0;
+  border-color: var(--border-color, #e5e7eb);
+}
+
+:deep(.header-divider .el-divider__text) {
+  display: none;
 }
 </style>
 Please login to add movies to your watchlist

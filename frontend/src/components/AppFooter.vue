@@ -1,23 +1,29 @@
 <script setup>
 import { 
   Star, 
-  ChatDotRound, 
-  VideoPlay,
-  Position,
   TrendCharts,
   Calendar,
   StarFilled,
-  Reading,
+  ChatDotRound,
   DataAnalysis,
-  QuestionFilled,
-  Document,
-  Service,
-  Warning
+  Position,
+  Message
 } from '@element-plus/icons-vue';
 import { useRouter } from 'vue-router';
 
 const router = useRouter();
 const currentYear = new Date().getFullYear();
+
+const navigateToProfile = (tab) => {
+  router.push('/profile').then(() => {
+    // Wait for the route to load, then set the active tab
+    setTimeout(() => {
+      // Trigger tab change by dispatching custom event or using global state
+      const event = new CustomEvent('profileTabChange', { detail: tab });
+      window.dispatchEvent(event);
+    }, 100);
+  });
+};
 </script>
 
 <template>
@@ -35,18 +41,11 @@ const currentYear = new Date().getFullYear();
             Discover, rate, and track your liked films with our community.
           </p>
           <div class="social-links">
-            <el-button circle size="small" class="social-btn" aria-label="Twitter">
-              <el-icon><ChatDotRound /></el-icon>
-            </el-button>
-            <el-button circle size="small" class="social-btn" aria-label="Instagram">
-              <el-icon><Position /></el-icon>
-            </el-button>
-            <el-button circle size="small" class="social-btn" aria-label="YouTube">
-              <el-icon><VideoPlay /></el-icon>
-            </el-button>
-            <el-button circle size="small" class="social-btn" aria-label="GitHub">
-              <el-icon><Document /></el-icon>
-            </el-button>
+            <a href="https://www.instagram.com/liu.hao7/" target="_blank" rel="noopener noreferrer" class="social-btn" aria-label="Instagram">
+              <el-button circle size="small" class="social-btn">
+                <el-icon><Position /></el-icon>
+              </el-button>
+            </a>
           </div>
         </div>
 
@@ -66,14 +65,6 @@ const currentYear = new Date().getFullYear();
               <el-icon><Calendar /></el-icon>
               Upcoming Releases
             </router-link>
-            <router-link to="/movies/now-playing" class="footer-link">
-              <el-icon><VideoPlay /></el-icon>
-              Now Playing
-            </router-link>
-            <a href="#" class="footer-link">
-              <el-icon><Reading /></el-icon>
-              Genre Explorer
-            </a>
           </nav>
         </div>
 
@@ -81,23 +72,19 @@ const currentYear = new Date().getFullYear();
         <div class="footer-section">
           <h4 class="section-title">Features</h4>
           <nav class="footer-nav">
-            <a href="#" class="footer-link">
+            <a href="/profile" class="footer-link" @click.prevent="navigateToProfile('watched')">
               <el-icon><Star /></el-icon>
               Personal Ratings
             </a>
-            <router-link to="/profile" class="footer-link">
+            <a href="/profile" class="footer-link" @click.prevent="navigateToProfile('watch-later')">
               <el-icon><StarFilled /></el-icon>
-              Watchlist
-            </router-link>
-            <a href="#" class="footer-link">
+              Watch Later
+            </a>
+            <a href="/profile" class="footer-link" @click.prevent="navigateToProfile('reviews')">
               <el-icon><ChatDotRound /></el-icon>
               Movie Reviews
             </a>
-            <a href="#" class="footer-link">
-              <el-icon><TrendCharts /></el-icon>
-              Recommendations
-            </a>
-            <a href="#" class="footer-link">
+            <a href="/profile" class="footer-link" @click.prevent="navigateToProfile('statistics')">
               <el-icon><DataAnalysis /></el-icon>
               Statistics
             </a>
@@ -108,25 +95,9 @@ const currentYear = new Date().getFullYear();
         <div class="footer-section">
           <h4 class="section-title">Support</h4>
           <nav class="footer-nav">
-            <a href="#" class="footer-link">
-              <el-icon><QuestionFilled /></el-icon>
-              Help Center
-            </a>
-            <a href="#" class="footer-link">
-              <el-icon><Document /></el-icon>
-              API Documentation
-            </a>
-            <a href="#" class="footer-link">
-              <el-icon><Position /></el-icon>
-              Contact Us
-            </a>
-            <a href="#" class="footer-link">
-              <el-icon><Service /></el-icon>
-              Community Guidelines
-            </a>
-            <a href="#" class="footer-link">
-              <el-icon><Warning /></el-icon>
-              Bug Report
+            <a href="mailto:2965245l@student.gla.ac.uk" class="footer-link">
+              <el-icon><Message /></el-icon>
+              Contact
             </a>
           </nav>
         </div>

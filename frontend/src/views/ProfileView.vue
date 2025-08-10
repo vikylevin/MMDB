@@ -182,7 +182,7 @@
     </el-card>
 
     <!-- summary statistics module -->
-    <el-card class="stats-card">
+    <el-card class="stats-card" id="statistics">
       <template #header>
         <div class="card-header">
           <el-icon><DataAnalysis /></el-icon>
@@ -263,10 +263,10 @@
     </el-card>
 
     <!-- movie list tabs -->
-    <el-card class="movies-card">
+    <el-card class="movies-card" id="movie-lists">
       <template #header>
         <el-tabs v-model="activeTab" class="profile-tabs" @tab-change="handleTabChange">
-          <el-tab-pane label="Liked Movies" name="likes">
+          <el-tab-pane label="Liked Movies" name="likes" id="watched">
             <template #label>
               <span class="tab-label">
                 <el-icon><Star /></el-icon>
@@ -274,7 +274,7 @@
               </span>
             </template>
           </el-tab-pane>
-          <el-tab-pane label="Watch Later" name="watch-later">
+          <el-tab-pane label="Watch Later" name="watch-later" id="watch-later">
             <template #label>
               <span class="tab-label">
                 <el-icon><Clock /></el-icon>
@@ -282,7 +282,7 @@
               </span>
             </template>
           </el-tab-pane>
-          <el-tab-pane label="Watched" name="watched">
+          <el-tab-pane label="Watched" name="watched" id="watched-movies">
             <template #label>
               <span class="tab-label">
                 <el-icon><Check /></el-icon>
@@ -290,7 +290,7 @@
               </span>
             </template>
           </el-tab-pane>
-          <el-tab-pane label="My Reviews" name="reviews">
+          <el-tab-pane label="My Reviews" name="reviews" id="reviews">
             <template #label>
               <span class="tab-label">
                 <el-icon><Star /></el-icon>
@@ -760,11 +760,27 @@ onMounted(async () => {
     }
   };
   
+  // Listen for footer navigation events
+  const handleProfileTabChange = (event) => {
+    if (event.detail) {
+      activeTab.value = event.detail;
+      // Scroll to the movies card section
+      setTimeout(() => {
+        const moviesCard = document.getElementById('movie-lists');
+        if (moviesCard) {
+          moviesCard.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 100);
+    }
+  };
+  
   window.addEventListener('focus', handleWindowFocus);
+  window.addEventListener('profileTabChange', handleProfileTabChange);
   
   // Cleanup listener on component unmount
   onUnmounted(() => {
     window.removeEventListener('focus', handleWindowFocus);
+    window.removeEventListener('profileTabChange', handleProfileTabChange);
     stopReviewsRefresh(); // Clean up the interval timer
   });
 });
