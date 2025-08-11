@@ -66,14 +66,11 @@ const loadingUpcoming = ref(false)
 const fetchPopularMovies = async () => {
   try {
     loadingPopular.value = true
-    console.log('Fetching popular movies from:', `${API_URL}/movie/popular`)
     const response = await axios.get(`${API_URL}/movie/popular`, {
       params: { page: 1 }
     })
-    console.log('Popular movies response:', response.data)
     if (response.data && response.data.results) {
       popularMovies.value = response.data.results.slice(0, 10)
-      console.log('Popular movies loaded:', popularMovies.value.length)
     }
   } catch (error) {
     console.error('Error fetching popular movies:', error)
@@ -86,11 +83,9 @@ const fetchPopularMovies = async () => {
 const fetchTopRatedMovies = async () => {
   try {
     loadingTopRated.value = true
-    console.log('Fetching top rated movies from:', `${API_URL}/movie/category/top-rated`)
     const response = await axios.get(`${API_URL}/movie/category/top-rated`, {
       params: { page: 1 }
     })
-    console.log('Top rated movies response:', response.data)
     if (response.data && response.data.results) {
       topRatedMovies.value = response.data.results.slice(0, 10)
     }
@@ -105,11 +100,9 @@ const fetchTopRatedMovies = async () => {
 const fetchUpcomingMovies = async () => {
   try {
     loadingUpcoming.value = true
-    console.log('Fetching upcoming movies from:', `${API_URL}/movie/category/upcoming`)
     const response = await axios.get(`${API_URL}/movie/category/upcoming`, {
       params: { page: 1 }
     })
-    console.log('Upcoming movies response:', response.data)
     if (response.data && response.data.results) {
       upcomingMovies.value = response.data.results.slice(0, 10)
     }
