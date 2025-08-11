@@ -10,7 +10,6 @@ import { currentUser as globalCurrentUser } from '../stores/auth';
 import { isMovieInWatchLater, updateMovieStatus, isMovieWatched, isMovieLiked } from '../stores/movieStatus';
 
 const API_URL = import.meta.env.VITE_API_BASE_URL || 'https://mmdb-f1b3.onrender.com/api';
-console.log('MovieDetailView API URL being used:', API_URL);
 
 const route = useRoute();
 const router = useRouter();
@@ -89,7 +88,6 @@ const handleRating = async (rating) => {
   }
 
   try {
-    console.log('Submitting rating:', rating, 'for movie:', movieId.value);
     await rateMovie(movieId.value, rating);
     userRating.value = rating;
     
@@ -158,7 +156,6 @@ const toggleLikeHandler = async () => {
   }
 
   try {
-    console.log('Toggling like for movie:', movieId.value);
     const response = await toggleLike(movieId.value);
     // Update global state
     updateMovieStatus(Number(movieId.value), 'likes', response.added);
@@ -243,7 +240,6 @@ const submitUserReview = async () => {
 
   reviewSubmitting.value = true;
   try {
-    console.log('Submitting review for movie:', movieId.value, userReview.value);
     await submitReview(movieId.value, {
       rating: userReview.value.rating,
       comment: userReview.value.comment.trim()

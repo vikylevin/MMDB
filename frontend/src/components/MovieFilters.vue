@@ -95,7 +95,6 @@ import { ref, onMounted, computed } from 'vue';
 import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_API_BASE_URL || 'https://mmdb-f1b3.onrender.com/api';
-console.log('MovieFilters API URL being used:', API_URL);
 
 const emit = defineEmits(['filtersChanged']);
 
@@ -135,12 +134,9 @@ const ratingMarks = ref({
 
 const fetchGenres = async () => {
   try {
-    console.log('Fetching genres from API...');
     const response = await axios.get(`${API_URL}/movie/genres`);
-    console.log('Genres API response:', response.data);
     if (response.data && response.data.genres) {
       genres.value = response.data.genres;
-      console.log('Genres loaded:', genres.value.length);
       // Check for any null or undefined IDs
       genres.value.forEach((genre, index) => {
         if (!genre || genre.id === null || genre.id === undefined) {
