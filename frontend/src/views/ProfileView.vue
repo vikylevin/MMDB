@@ -29,25 +29,31 @@
             </div>
             <div class="info-item">
               <label>Email:</label>
-              <span>{{ user.email || 'Not set' }}</span>
-              <el-button 
-                size="small" 
-                @click="showChangeEmailDialog = true"
-                class="change-email-btn-inline"
-              >
-                Change Email
-              </el-button>
+              <div style="display: flex; align-items: center; justify-content: space-between;">
+                <span>{{ user.email || 'Not set' }}</span>
+                <el-button 
+                  size="small" 
+                  type="primary"
+                  @click="showChangeEmailDialog = true"
+                  class="change-email-btn-inline"
+                >
+                  Change Email
+                </el-button>
+              </div>
             </div>
             <div class="info-item">
               <label>Password:</label>
-              <span>••••••••</span>
-              <el-button 
-                size="small" 
-                @click="showChangePasswordDialog = true"
-                class="change-password-btn-inline"
-              >
-                Change Password
-              </el-button>
+              <div style="display: flex; align-items: center; justify-content: space-between;">
+                <span>••••••••</span>
+                <el-button 
+                  size="small" 
+                  type="primary"
+                  @click="showChangePasswordDialog = true"
+                  class="change-password-btn-inline"
+                >
+                  Change Password
+                </el-button>
+              </div>
             </div>
             <div class="info-item">
               <label>Member since:</label>
@@ -1160,15 +1166,18 @@ onMounted(async () => {
 
 .change-password-btn-inline,
 .change-email-btn-inline {
-  margin-left: 10px;
-  padding: 4px 12px;
-  font-size: 12px;
-  height: auto;
-  background: var(--primary-color);
-  border-color: var(--primary-color);
-  color: white;
-  border-radius: 4px;
-  transition: all 0.3s ease;
+  margin-left: 10px !important;
+  padding: 6px 16px !important;
+  font-size: 13px !important;
+  height: auto !important;
+  background: #409eff !important;
+  border-color: #409eff !important;
+  color: white !important;
+  border-radius: 4px !important;
+  transition: all 0.3s ease !important;
+  display: inline-block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
 }
 
 .change-password-btn-inline:hover,
