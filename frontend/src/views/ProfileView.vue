@@ -33,7 +33,6 @@
                 <span>{{ user.email || 'Not set' }}</span>
                 <el-button 
                   size="small" 
-                  type="primary"
                   @click="showChangeEmailDialog = true"
                   class="change-email-btn-inline"
                 >
@@ -47,7 +46,6 @@
                 <span>••••••••</span>
                 <el-button 
                   size="small" 
-                  type="primary"
                   @click="showChangePasswordDialog = true"
                   class="change-password-btn-inline"
                 >
@@ -1830,11 +1828,13 @@ onMounted(async () => {
 }
 
 /* Override any conflicting button styles for password/email change buttons */
-.info-item .change-password-btn-inline,
-.info-item .change-email-btn-inline,
-.profile-info-card .change-password-btn-inline,
-.profile-info-card .change-email-btn-inline {
-  background: #ff6b35 !important;
+.element-theme-provider .info-item .change-password-btn-inline,
+.element-theme-provider .info-item .change-email-btn-inline,
+.element-theme-provider .profile-info-card .change-password-btn-inline,
+.element-theme-provider .profile-info-card .change-email-btn-inline,
+.change-password-btn-inline,
+.change-email-btn-inline {
+  background-color: #ff6b35 !important;
   border-color: #ff6b35 !important;
   color: white !important;
   font-weight: 600 !important;
@@ -1849,11 +1849,13 @@ onMounted(async () => {
   opacity: 1 !important;
 }
 
-.info-item .change-password-btn-inline:hover,
-.info-item .change-email-btn-inline:hover,
-.profile-info-card .change-password-btn-inline:hover,
-.profile-info-card .change-email-btn-inline:hover {
-  background: #e55a2b !important;
+.element-theme-provider .info-item .change-password-btn-inline:hover,
+.element-theme-provider .info-item .change-email-btn-inline:hover,
+.element-theme-provider .profile-info-card .change-password-btn-inline:hover,
+.element-theme-provider .profile-info-card .change-email-btn-inline:hover,
+.change-password-btn-inline:hover,
+.change-email-btn-inline:hover {
+  background-color: #e55a2b !important;
   border-color: #e55a2b !important;
   color: white !important;
   transform: translateY(-2px) !important;
