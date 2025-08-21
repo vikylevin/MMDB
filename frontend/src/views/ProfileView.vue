@@ -1167,24 +1167,28 @@ onMounted(async () => {
 .change-password-btn-inline,
 .change-email-btn-inline {
   margin-left: 10px !important;
-  padding: 6px 16px !important;
-  font-size: 13px !important;
+  padding: 8px 16px !important;
+  font-size: 14px !important;
   height: auto !important;
-  background: #409eff !important;
-  border-color: #409eff !important;
+  background: #ff6b35 !important;
+  border-color: #ff6b35 !important;
   color: white !important;
-  border-radius: 4px !important;
+  border-radius: 6px !important;
   transition: all 0.3s ease !important;
   display: inline-block !important;
   visibility: visible !important;
   opacity: 1 !important;
+  font-weight: 600 !important;
+  box-shadow: 0 2px 4px rgba(255, 107, 53, 0.3) !important;
 }
 
 .change-password-btn-inline:hover,
 .change-email-btn-inline:hover {
-  background: var(--primary-color-hover);
-  border-color: var(--primary-color-hover);
-  transform: translateY(-1px);
+  background: #e55a2b !important;
+  border-color: #e55a2b !important;
+  color: white !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 8px rgba(255, 107, 53, 0.4) !important;
 }
 
 .info-item a {
@@ -1823,6 +1827,37 @@ onMounted(async () => {
     width: 100%;
     justify-content: center;
   }
+}
+
+/* Override any conflicting button styles for password/email change buttons */
+.info-item .change-password-btn-inline,
+.info-item .change-email-btn-inline,
+.profile-info-card .change-password-btn-inline,
+.profile-info-card .change-email-btn-inline {
+  background: #ff6b35 !important;
+  border-color: #ff6b35 !important;
+  color: white !important;
+  font-weight: 600 !important;
+  border-radius: 6px !important;
+  padding: 8px 16px !important;
+  font-size: 14px !important;
+  transition: all 0.3s ease !important;
+  box-shadow: 0 2px 4px rgba(255, 107, 53, 0.3) !important;
+  margin-left: 10px !important;
+  display: inline-block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+.info-item .change-password-btn-inline:hover,
+.info-item .change-email-btn-inline:hover,
+.profile-info-card .change-password-btn-inline:hover,
+.profile-info-card .change-email-btn-inline:hover {
+  background: #e55a2b !important;
+  border-color: #e55a2b !important;
+  color: white !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 8px rgba(255, 107, 53, 0.4) !important;
 }
 </style>
 
