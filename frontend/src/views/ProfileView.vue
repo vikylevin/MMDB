@@ -1834,15 +1834,15 @@ onMounted(async () => {
 .element-theme-provider .profile-info-card .change-email-btn-inline,
 .change-password-btn-inline,
 .change-email-btn-inline {
-  background-color: #ff6b35 !important;
-  border-color: #ff6b35 !important;
+  background-color: #2c3e50 !important;
+  border-color: #2c3e50 !important;
   color: white !important;
   font-weight: 600 !important;
   border-radius: 6px !important;
   padding: 8px 16px !important;
   font-size: 14px !important;
   transition: all 0.3s ease !important;
-  box-shadow: 0 2px 4px rgba(255, 107, 53, 0.3) !important;
+  box-shadow: 0 2px 4px rgba(44, 62, 80, 0.3) !important;
   margin-left: 10px !important;
   display: inline-block !important;
   visibility: visible !important;
@@ -1855,11 +1855,11 @@ onMounted(async () => {
 .element-theme-provider .profile-info-card .change-email-btn-inline:hover,
 .change-password-btn-inline:hover,
 .change-email-btn-inline:hover {
-  background-color: #e55a2b !important;
-  border-color: #e55a2b !important;
+  background-color: #34495e !important;
+  border-color: #34495e !important;
   color: white !important;
-  transform: translateY(-2px) !important;
-  box-shadow: 0 4px 8px rgba(255, 107, 53, 0.4) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 2px 8px rgba(44, 62, 80, 0.3) !important;
 }
 </style>
 
