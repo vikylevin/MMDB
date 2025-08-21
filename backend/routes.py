@@ -563,6 +563,9 @@ def register():
     
     # Create new user
     user = User(username=data['username'], email=data['email'])
+    # Enforce minimum password length for basic password policy
+    if len(data['password']) < 8:
+        return jsonify({'error': 'Password must be at least 8 characters long'}), 400
     user.set_password(data['password'])
     
     db.session.add(user)
@@ -679,6 +682,57 @@ def get_watch_later():
             movies.append(movie_info)
     
     return jsonify(movies)
+
+
+@user_bp.route('/change-password', methods=['PUT'])
+@jwt_required()
+def change_password():
+    """Allow authenticated user to change their password. Requires current password."""
+    user_id = get_jwt_identity()
+    user = User.query.get_or_404(user_id)
+    data = request.get_json() or {}
+
+    if not all(k in data for k in ['current_password', 'new_password']):
+        return jsonify({'error': 'Missing current_password or new_password'}), 400
+
+    # Verify current password
+    if not user.check_password(data['current_password']):
+        return jsonify({'error': 'Current password is incorrect'}), 401
+
+    # Enforce minimum password length
+    if len(data['new_password']) < 8:
+        return jsonify({'error': 'New password must be at least 8 characters long'}), 400
+
+    user.set_password(data['new_password'])
+    db.session.commit()
+
+    return jsonify({'message': 'Password updated successfully'})
+
+
+@user_bp.route('/change-email', methods=['PUT'])
+@jwt_required()
+def change_email():
+    """Allow authenticated user to change their email. Requires current password for verification."""
+    user_id = get_jwt_identity()
+    user = User.query.get_or_404(user_id)
+    data = request.get_json() or {}
+
+    if 'new_email' not in data or 'current_password' not in data:
+        return jsonify({'error': 'Missing new_email or current_password'}), 400
+
+    # Verify current password
+    if not user.check_password(data['current_password']):
+        return jsonify({'error': 'Current password is incorrect'}), 401
+
+    new_email = data['new_email'].strip().lower()
+    # Check email uniqueness
+    if User.query.filter(User.email == new_email, User.id != user.id).first():
+        return jsonify({'error': 'Email already in use'}), 400
+
+    user.email = new_email
+    db.session.commit()
+
+    return jsonify({'message': 'Email updated successfully', 'user': {'id': user.id, 'email': user.email}})
 
 # Backward compatibility aliases
 @user_bp.route('/watchlist', methods=['GET', 'OPTIONS'])

@@ -181,6 +181,137 @@
       </div>
     </el-card>
 
+    <!-- Account Security Section -->
+    <el-card class="security-card">
+      <template #header>
+        <div class="card-header">
+          <el-icon><Lock /></el-icon>
+          <span>Account Security</span>
+        </div>
+      </template>
+
+      <div class="security-section">
+        <div class="security-item">
+          <div class="security-info">
+            <h4>Password</h4>
+            <p>Change your password to keep your account secure</p>
+          </div>
+          <el-button @click="showChangePasswordDialog = true" class="change-password-btn">
+            Change Password
+          </el-button>
+        </div>
+        
+        <div class="security-item">
+          <div class="security-info">
+            <h4>Email Address</h4>
+            <p>Update your email address for account notifications</p>
+          </div>
+          <el-button @click="showChangeEmailDialog = true" class="change-email-btn">
+            Change Email
+          </el-button>
+        </div>
+      </div>
+    </el-card>
+
+    <!-- Change Password Dialog -->
+    <el-dialog
+      v-model="showChangePasswordDialog"
+      title="Change Password"
+      width="400px"
+      :close-on-click-modal="false"
+    >
+      <el-form
+        ref="passwordFormRef"
+        :model="passwordForm"
+        :rules="passwordRules"
+        label-width="140px"
+        @submit.prevent="changePassword"
+      >
+        <el-form-item label="Current Password" prop="currentPassword">
+          <el-input
+            v-model="passwordForm.currentPassword"
+            type="password"
+            show-password
+            placeholder="Enter current password"
+          />
+        </el-form-item>
+        <el-form-item label="New Password" prop="newPassword">
+          <el-input
+            v-model="passwordForm.newPassword"
+            type="password"
+            show-password
+            placeholder="Enter new password (min 8 characters)"
+          />
+        </el-form-item>
+        <el-form-item label="Confirm Password" prop="confirmPassword">
+          <el-input
+            v-model="passwordForm.confirmPassword"
+            type="password"
+            show-password
+            placeholder="Confirm new password"
+          />
+        </el-form-item>
+      </el-form>
+      
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="showChangePasswordDialog = false">Cancel</el-button>
+          <el-button 
+            type="primary" 
+            @click="changePassword"
+            :loading="passwordChanging"
+          >
+            Change Password
+          </el-button>
+        </div>
+      </template>
+    </el-dialog>
+
+    <!-- Change Email Dialog -->
+    <el-dialog
+      v-model="showChangeEmailDialog"
+      title="Change Email"
+      width="400px"
+      :close-on-click-modal="false"
+    >
+      <el-form
+        ref="emailFormRef"
+        :model="emailForm"
+        :rules="emailRules"
+        label-width="140px"
+        @submit.prevent="changeEmail"
+      >
+        <el-form-item label="Current Password" prop="currentPassword">
+          <el-input
+            v-model="emailForm.currentPassword"
+            type="password"
+            show-password
+            placeholder="Enter current password for verification"
+          />
+        </el-form-item>
+        <el-form-item label="New Email" prop="newEmail">
+          <el-input
+            v-model="emailForm.newEmail"
+            type="email"
+            placeholder="Enter new email address"
+          />
+        </el-form-item>
+      </el-form>
+      
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="showChangeEmailDialog = false">Cancel</el-button>
+          <el-button 
+            type="primary" 
+            @click="changeEmail"
+            :loading="emailChanging"
+          >
+            Change Email
+          </el-button>
+        </div>
+      </template>
+    </el-dialog>
+
     <!-- summary statistics module -->
     <el-card class="stats-card" id="statistics">
       <template #header>
@@ -412,12 +543,13 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { User, Star, Clock, Check, DataAnalysis, PieChart, Edit, Close, MoreFilled } from '@element-plus/icons-vue';
+import { User, Star, Clock, Check, DataAnalysis, PieChart, Edit, Close, MoreFilled, Lock } from '@element-plus/icons-vue';
 import { getLikes, getWatchLater, getWatched, getUserReviews } from '../services/api';
 import ProfileMovieCard from '../components/ProfileMovieCard.vue';
 import { ElMessage } from 'element-plus';
 import { initializeMovieStatus } from '../stores/movieStatus';
 import { initializeMovieRatings } from '../stores/movieRatings';
+import axios from 'axios';
 
 const router = useRouter();
 
@@ -469,6 +601,61 @@ const availableGenres = ref([
   { id: 10752, name: 'War' },
   { id: 37, name: 'Western' }
 ]);
+
+// Account Security Data
+const showChangePasswordDialog = ref(false);
+const showChangeEmailDialog = ref(false);
+const passwordChanging = ref(false);
+const emailChanging = ref(false);
+const passwordFormRef = ref();
+const emailFormRef = ref();
+
+const passwordForm = ref({
+  currentPassword: '',
+  newPassword: '',
+  confirmPassword: ''
+});
+
+const emailForm = ref({
+  currentPassword: '',
+  newEmail: ''
+});
+
+// Form validation rules
+const passwordRules = {
+  currentPassword: [
+    { required: true, message: 'Please enter your current password', trigger: 'blur' }
+  ],
+  newPassword: [
+    { required: true, message: 'Please enter a new password', trigger: 'blur' },
+    { min: 8, message: 'Password must be at least 8 characters long', trigger: 'blur' }
+  ],
+  confirmPassword: [
+    { required: true, message: 'Please confirm your new password', trigger: 'blur' },
+    {
+      validator: (rule, value, callback) => {
+        if (value !== passwordForm.value.newPassword) {
+          callback(new Error('Passwords do not match'));
+        } else {
+          callback();
+        }
+      },
+      trigger: 'blur'
+    }
+  ]
+};
+
+const emailRules = {
+  currentPassword: [
+    { required: true, message: 'Please enter your current password', trigger: 'blur' }
+  ],
+  newEmail: [
+    { required: true, message: 'Please enter a new email', trigger: 'blur' },
+    { type: 'email', message: 'Please enter a valid email address', trigger: 'blur' }
+  ]
+};
+
+const API_URL = import.meta.env.VITE_API_BASE_URL || 'https://mmdb-f1b3.onrender.com/api';
 
 // Computed properties for analysis
 const genreStats = computed(() => {
@@ -735,6 +922,125 @@ const loadAllData = async () => {
     ElMessage.error('Failed to load profile data');
   } finally {
     isInitialLoading.value = false;
+  }
+};
+
+// Account Security Methods
+const changePassword = async () => {
+  if (!passwordFormRef.value) return;
+  
+  try {
+    await passwordFormRef.value.validate();
+    passwordChanging.value = true;
+    
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+      ElMessage.error('Please log in again');
+      router.push('/login');
+      return;
+    }
+    
+    const response = await axios.put(
+      `${API_URL}/user/change-password`,
+      {
+        current_password: passwordForm.value.currentPassword,
+        new_password: passwordForm.value.newPassword
+      },
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+    
+    ElMessage.success('Password changed successfully');
+    showChangePasswordDialog.value = false;
+    
+    // Clear form
+    passwordForm.value = {
+      currentPassword: '',
+      newPassword: '',
+      confirmPassword: ''
+    };
+    passwordFormRef.value.resetFields();
+    
+  } catch (error) {
+    console.error('Error changing password:', error);
+    let errorMessage = 'Failed to change password';
+    
+    if (error.response?.data?.error) {
+      errorMessage = error.response.data.error;
+    } else if (error.response?.status === 401) {
+      errorMessage = 'Current password is incorrect';
+    }
+    
+    ElMessage.error(errorMessage);
+  } finally {
+    passwordChanging.value = false;
+  }
+};
+
+const changeEmail = async () => {
+  if (!emailFormRef.value) return;
+  
+  try {
+    await emailFormRef.value.validate();
+    emailChanging.value = true;
+    
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+      ElMessage.error('Please log in again');
+      router.push('/login');
+      return;
+    }
+    
+    const response = await axios.put(
+      `${API_URL}/user/change-email`,
+      {
+        current_password: emailForm.value.currentPassword,
+        new_email: emailForm.value.newEmail
+      },
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+    
+    ElMessage.success('Email changed successfully');
+    
+    // Update user data in localStorage
+    if (response.data.user) {
+      const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+      currentUser.email = response.data.user.email;
+      localStorage.setItem('user', JSON.stringify(currentUser));
+      user.value = currentUser;
+    }
+    
+    showChangeEmailDialog.value = false;
+    
+    // Clear form
+    emailForm.value = {
+      currentPassword: '',
+      newEmail: ''
+    };
+    emailFormRef.value.resetFields();
+    
+  } catch (error) {
+    console.error('Error changing email:', error);
+    let errorMessage = 'Failed to change email';
+    
+    if (error.response?.data?.error) {
+      errorMessage = error.response.data.error;
+    } else if (error.response?.status === 401) {
+      errorMessage = 'Current password is incorrect';
+    }
+    
+    ElMessage.error(errorMessage);
+  } finally {
+    emailChanging.value = false;
   }
 };
 
@@ -1423,6 +1729,80 @@ onMounted(async () => {
   
   .edit-actions .el-button {
     width: 100%;
+  }
+}
+
+/* Account Security Card Styles */
+.security-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+}
+
+.security-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.security-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background: var(--bg-color);
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+}
+
+.security-info h4 {
+  margin: 0 0 0.5rem 0;
+  color: var(--text-color);
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.security-info p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.change-password-btn,
+.change-email-btn {
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+}
+
+.change-password-btn:hover,
+.change-email-btn:hover {
+  background: var(--primary-color-hover);
+  border-color: var(--primary-color-hover);
+  transform: translateY(-1px);
+}
+
+/* Dialog Form Styles */
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+/* Responsive design for security section */
+@media (max-width: 768px) {
+  .security-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  
+  .change-password-btn,
+  .change-email-btn {
+    width: 100%;
+    justify-content: center;
   }
 }
 </style>
