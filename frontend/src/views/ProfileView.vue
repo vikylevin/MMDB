@@ -30,6 +30,24 @@
             <div class="info-item">
               <label>Email:</label>
               <span>{{ user.email || 'Not set' }}</span>
+              <el-button 
+                size="small" 
+                @click="showChangeEmailDialog = true"
+                class="change-email-btn-inline"
+              >
+                Change Email
+              </el-button>
+            </div>
+            <div class="info-item">
+              <label>Password:</label>
+              <span>••••••••</span>
+              <el-button 
+                size="small" 
+                @click="showChangePasswordDialog = true"
+                class="change-password-btn-inline"
+              >
+                Change Password
+              </el-button>
             </div>
             <div class="info-item">
               <label>Member since:</label>
@@ -178,38 +196,6 @@
       <div v-else class="login-prompt">
         <p>Please log in to view your profile</p>
         <el-button @click="$router.push('/login')" class="login-btn">Login</el-button>
-      </div>
-    </el-card>
-
-    <!-- Account Security Section -->
-    <el-card class="security-card">
-      <template #header>
-        <div class="card-header">
-          <el-icon><Lock /></el-icon>
-          <span>Account Security</span>
-        </div>
-      </template>
-
-      <div class="security-section">
-        <div class="security-item">
-          <div class="security-info">
-            <h4>Password</h4>
-            <p>Change your password to keep your account secure</p>
-          </div>
-          <el-button @click="showChangePasswordDialog = true" class="change-password-btn">
-            Change Password
-          </el-button>
-        </div>
-        
-        <div class="security-item">
-          <div class="security-info">
-            <h4>Email Address</h4>
-            <p>Update your email address for account notifications</p>
-          </div>
-          <el-button @click="showChangeEmailDialog = true" class="change-email-btn">
-            Change Email
-          </el-button>
-        </div>
       </div>
     </el-card>
 
@@ -1166,6 +1152,30 @@ onMounted(async () => {
 .info-item span {
   color: var(--secondary-color);
   min-height: 1.5rem;
+}
+
+.info-item {
+  position: relative;
+}
+
+.change-password-btn-inline,
+.change-email-btn-inline {
+  margin-left: 10px;
+  padding: 4px 12px;
+  font-size: 12px;
+  height: auto;
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+  color: white;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+}
+
+.change-password-btn-inline:hover,
+.change-email-btn-inline:hover {
+  background: var(--primary-color-hover);
+  border-color: var(--primary-color-hover);
+  transform: translateY(-1px);
 }
 
 .info-item a {
