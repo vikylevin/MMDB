@@ -396,6 +396,7 @@ const handleLogout = () => {
   transition: all 0.3s ease;
   display: flex;
   align-items: center;
+  justify-content: flex-end;
 }
 
 .search-container.expanded {
@@ -407,8 +408,6 @@ const handleLogout = () => {
 }
 
 .search-input {
-  position: absolute;
-  right: 0;
   width: 100%;
   opacity: 0;
   transform: translateX(10px);
@@ -426,13 +425,15 @@ const handleLogout = () => {
 .search-input-wrapper {
   position: relative;
   width: 100%;
+  display: flex;
+  align-items: center;
 }
 
 .search-suggestions {
   position: absolute;
-  top: calc(100% + 8px);
+  top: calc(100% + 4px);
   left: 0;
-  right: 40px; /* Account for the search button */
+  right: 0;
   background: #ffffff;
   border: 1px solid #e1e5e9;
   border-radius: 8px;
