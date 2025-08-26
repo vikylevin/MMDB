@@ -1,8 +1,23 @@
 <script setup>
-import { ref, nextTick, onMounted, onUnmounted } from 'vue';
+import { ref, nextTick, onMounted, onUnmounted, watch } from 'vue';
 import { Search, User, Menu, ArrowDown } from '@element-plus/icons-vue';
 import { useRouter } from 'vue-router';
 import { currentUser, setAuthState } from '../stores/auth';
+import axios from 'axios';
+
+const router = useRouter();
+const searchQuery = ref('');
+const isMenuOpen = ref(false);
+const isSearchExpanded = ref(false);
+
+// Autocomplete functionality
+const searchSuggestions = ref([]);
+const showSuggestions = ref(false);
+const selectedSuggestionIndex = ref(-1);
+const searchTimeout = ref(null);
+
+// API configuration
+const API_URL = import.meta.env.VITE_API_BASE_URL || 'https://mmdb-f1b3.onrender.com/api';
 
 const router = useRouter();
 const searchQuery = ref('');
@@ -18,6 +33,7 @@ const handleClickOutside = (event) => {
   if (isSearchExpanded.value && searchContainer && !searchContainer.contains(event.target)) {
     isSearchExpanded.value = false;
     searchQuery.value = '';
+    clearSearchSuggestions();
   }
 };
 
@@ -38,10 +54,103 @@ const handleSearch = () => {
       path: '/search',
       query: { query: searchQuery.value.trim() }
     });
-    // After searching, collapse the search bar
+    // After searching, collapse the search bar and clear suggestions
     isSearchExpanded.value = false;
+    showSuggestions.value = false;
+    clearSearchSuggestions();
   }
 };
+
+// Debounced search function for autocomplete
+const fetchSearchSuggestions = async (query) => {
+  if (!query.trim() || query.length < 2) {
+    searchSuggestions.value = [];
+    showSuggestions.value = false;
+    return;
+  }
+
+  try {
+    const response = await axios.get(`${API_URL}/movie/search`, {
+      params: {
+        query: query.trim(),
+        page: 1
+      }
+    });
+
+    // Get first 5 results for suggestions
+    searchSuggestions.value = response.data.results.slice(0, 5).map(movie => ({
+      id: movie.id,
+      title: movie.title,
+      year: movie.release_date ? new Date(movie.release_date).getFullYear() : '',
+      poster_path: movie.poster_path
+    }));
+    
+    showSuggestions.value = searchSuggestions.value.length > 0;
+    selectedSuggestionIndex.value = -1;
+  } catch (error) {
+    console.error('Error fetching search suggestions:', error);
+    searchSuggestions.value = [];
+    showSuggestions.value = false;
+  }
+};
+
+// Clear search suggestions
+const clearSearchSuggestions = () => {
+  searchSuggestions.value = [];
+  showSuggestions.value = false;
+  selectedSuggestionIndex.value = -1;
+};
+
+// Handle suggestion selection
+const selectSuggestion = (suggestion) => {
+  router.push(`/movie/${suggestion.id}`);
+  isSearchExpanded.value = false;
+  clearSearchSuggestions();
+  searchQuery.value = '';
+};
+
+// Handle keyboard navigation
+const handleKeyDown = (event) => {
+  if (!showSuggestions.value || searchSuggestions.value.length === 0) return;
+
+  switch (event.key) {
+    case 'ArrowDown':
+      event.preventDefault();
+      selectedSuggestionIndex.value = Math.min(
+        selectedSuggestionIndex.value + 1,
+        searchSuggestions.value.length - 1
+      );
+      break;
+    case 'ArrowUp':
+      event.preventDefault();
+      selectedSuggestionIndex.value = Math.max(selectedSuggestionIndex.value - 1, -1);
+      break;
+    case 'Enter':
+      event.preventDefault();
+      if (selectedSuggestionIndex.value >= 0) {
+        selectSuggestion(searchSuggestions.value[selectedSuggestionIndex.value]);
+      } else {
+        handleSearch();
+      }
+      break;
+    case 'Escape':
+      clearSearchSuggestions();
+      break;
+  }
+};
+
+// Watch search query for autocomplete
+watch(searchQuery, (newQuery) => {
+  // Clear existing timeout
+  if (searchTimeout.value) {
+    clearTimeout(searchTimeout.value);
+  }
+
+  // Set new timeout for debounced search
+  searchTimeout.value = setTimeout(() => {
+    fetchSearchSuggestions(newQuery);
+  }, 300); // 300ms debounce
+});
 
 const toggleSearch = () => {
   isSearchExpanded.value = !isSearchExpanded.value;
@@ -51,8 +160,9 @@ const toggleSearch = () => {
       document.querySelector('.search-input input').focus();
     });
   } else {
-    // Clear the search query when collapsed
+    // Clear the search query and suggestions when collapsed
     searchQuery.value = '';
+    clearSearchSuggestions();
   }
 };
 
@@ -112,17 +222,52 @@ const handleLogout = () => {
             @click.stop="toggleSearch"
             v-if="!isSearchExpanded"
           />
-          <el-input
-            v-show="isSearchExpanded"
-            v-model="searchQuery"
-            placeholder="Search movies..."
-            @keyup.enter="handleSearch"
-            class="search-input"
-          >
-            <template #append>
-              <el-button :icon="Search" @click="handleSearch"/>
-            </template>
-          </el-input>
+          <div class="search-input-wrapper" v-show="isSearchExpanded">
+            <el-input
+              v-model="searchQuery"
+              placeholder="Search movies..."
+              @keydown="handleKeyDown"
+              @blur="() => setTimeout(() => clearSearchSuggestions(), 200)"
+              class="search-input"
+            >
+              <template #append>
+                <el-button :icon="Search" @click="handleSearch"/>
+              </template>
+            </el-input>
+            
+            <!-- Search Suggestions Dropdown -->
+            <div 
+              v-if="showSuggestions && searchSuggestions.length > 0" 
+              class="search-suggestions"
+            >
+              <div 
+                v-for="(suggestion, index) in searchSuggestions" 
+                :key="suggestion.id"
+                :class="[
+                  'suggestion-item', 
+                  { 'selected': index === selectedSuggestionIndex }
+                ]"
+                @click="selectSuggestion(suggestion)"
+                @mouseenter="selectedSuggestionIndex = index"
+              >
+                <div class="suggestion-poster">
+                  <img 
+                    v-if="suggestion.poster_path"
+                    :src="`https://image.tmdb.org/t/p/w92${suggestion.poster_path}`"
+                    :alt="suggestion.title"
+                    class="poster-thumb"
+                  />
+                  <div v-else class="poster-placeholder">
+                    <el-icon><Search /></el-icon>
+                  </div>
+                </div>
+                <div class="suggestion-content">
+                  <div class="suggestion-title">{{ suggestion.title }}</div>
+                  <div class="suggestion-year" v-if="suggestion.year">{{ suggestion.year }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div class="controls">
@@ -281,6 +426,88 @@ const handleLogout = () => {
   opacity: 1;
   transform: translateX(0);
   pointer-events: auto;
+}
+
+/* Search Suggestions Styles */
+.search-input-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.search-suggestions {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 40px; /* Account for the search button */
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  z-index: 1001;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.suggestion-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border-color);
+  transition: all 0.2s ease;
+}
+
+.suggestion-item:last-child {
+  border-bottom: none;
+}
+
+.suggestion-item:hover,
+.suggestion-item.selected {
+  background: var(--hover-color);
+}
+
+.suggestion-poster {
+  flex-shrink: 0;
+  width: 40px;
+  height: 60px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.poster-thumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.poster-placeholder {
+  color: var(--text-color);
+  font-size: 16px;
+}
+
+.suggestion-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.suggestion-title {
+  font-weight: 600;
+  color: var(--text-color);
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.suggestion-year {
+  font-size: 0.875rem;
+  color: var(--secondary-color);
 }
 
 .controls {
