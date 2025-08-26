@@ -430,12 +430,12 @@ const handleLogout = () => {
 
 .search-suggestions {
   position: absolute;
-  top: calc(100% + 2px);
+  top: calc(100% + 8px);
   left: 0;
   right: 40px; /* Account for the search button */
   background: #ffffff;
   border: 1px solid #e1e5e9;
-  border-radius: 0 0 8px 8px;
+  border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   z-index: 1001;
   max-height: 300px;
@@ -483,32 +483,6 @@ const handleLogout = () => {
   color: #6c757d;
   font-size: 12px;
   white-space: nowrap;
-}
-
-/* Dark theme support for search suggestions */
-@media (prefers-color-scheme: dark) {
-  .search-suggestions {
-    background: #2c3e50;
-    border-color: #34495e;
-  }
-  
-  .suggestion-item {
-    background: #2c3e50;
-    border-bottom-color: #34495e;
-  }
-  
-  .suggestion-item:hover,
-  .suggestion-item.selected {
-    background: #34495e;
-  }
-  
-  .suggestion-title {
-    color: #ecf0f1;
-  }
-  
-  .suggestion-year {
-    color: #95a5a6;
-  }
 }
 
 .controls {
