@@ -33,8 +33,11 @@ onUnmounted(() => {
 
 const handleSearch = () => {
   if (searchQuery.value.trim()) {
-    // Navigate to search results page with query
-    window.location.href = `/search?query=${encodeURIComponent(searchQuery.value)}`;
+    // Navigate to search results page with query using Vue Router
+    router.push({
+      path: '/search',
+      query: { query: searchQuery.value.trim() }
+    });
     // After searching, collapse the search bar
     isSearchExpanded.value = false;
   }

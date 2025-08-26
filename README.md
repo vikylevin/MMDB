@@ -52,7 +52,7 @@ The application uses TMDB API for movie data. The API key is configured in the `
 
 ## Database
 
-The application uses PostgreSQL database hosted on Render (production) or SQLite for development, which will be created automatically in the `backend/instance` directory when you run the application locally for the first time.
+The application uses PostgreSQL database hosted on Render for both production and development environments.
 
 ## Testing the Backend
 
