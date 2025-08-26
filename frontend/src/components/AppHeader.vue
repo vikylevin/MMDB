@@ -19,11 +19,6 @@ const searchTimeout = ref(null);
 // API configuration
 const API_URL = import.meta.env.VITE_API_BASE_URL || 'https://mmdb-f1b3.onrender.com/api';
 
-const router = useRouter();
-const searchQuery = ref('');
-const isMenuOpen = ref(false);
-const isSearchExpanded = ref(false);
-
 // Use reactive user from auth store instead of local state
 const user = currentUser;
 
