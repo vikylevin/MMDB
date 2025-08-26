@@ -58,19 +58,25 @@ const handleSearch = () => {
 
 // Debounced search function for autocomplete
 const fetchSearchSuggestions = async (query) => {
+  console.log('fetchSearchSuggestions called with query:', query);
+  
   if (!query.trim() || query.length < 2) {
+    console.log('Query too short, clearing suggestions');
     searchSuggestions.value = [];
     showSuggestions.value = false;
     return;
   }
 
   try {
+    console.log('Making API request to:', `${API_URL}/movie/search`);
     const response = await axios.get(`${API_URL}/movie/search`, {
       params: {
         query: query.trim(),
         page: 1
       }
     });
+
+    console.log('API response received:', response.data);
 
     // Get first 5 results for suggestions
     searchSuggestions.value = response.data.results.slice(0, 5).map(movie => ({
@@ -80,8 +86,12 @@ const fetchSearchSuggestions = async (query) => {
       poster_path: movie.poster_path
     }));
     
+    console.log('Processed suggestions:', searchSuggestions.value);
+    
     showSuggestions.value = searchSuggestions.value.length > 0;
     selectedSuggestionIndex.value = -1;
+    
+    console.log('showSuggestions set to:', showSuggestions.value);
   } catch (error) {
     console.error('Error fetching search suggestions:', error);
     searchSuggestions.value = [];
@@ -245,20 +255,9 @@ const handleLogout = () => {
                 @click="selectSuggestion(suggestion)"
                 @mouseenter="selectedSuggestionIndex = index"
               >
-                <div class="suggestion-poster">
-                  <img 
-                    v-if="suggestion.poster_path"
-                    :src="`https://image.tmdb.org/t/p/w92${suggestion.poster_path}`"
-                    :alt="suggestion.title"
-                    class="poster-thumb"
-                  />
-                  <div v-else class="poster-placeholder">
-                    <el-icon><Search /></el-icon>
-                  </div>
-                </div>
                 <div class="suggestion-content">
                   <div class="suggestion-title">{{ suggestion.title }}</div>
-                  <div class="suggestion-year" v-if="suggestion.year">{{ suggestion.year }}</div>
+                  <div class="suggestion-year" v-if="suggestion.year">({{ suggestion.year }})</div>
                 </div>
               </div>
             </div>
@@ -447,8 +446,8 @@ const handleLogout = () => {
 .suggestion-item {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px 16px;
+  gap: 8px;
+  padding: 8px 12px;
   cursor: pointer;
   border-bottom: 1px solid var(--border-color);
   transition: all 0.2s ease;
@@ -463,46 +462,27 @@ const handleLogout = () => {
   background: var(--hover-color);
 }
 
-.suggestion-poster {
-  flex-shrink: 0;
-  width: 40px;
-  height: 60px;
-  border-radius: 4px;
-  overflow: hidden;
-  background: var(--border-color);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.poster-thumb {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.poster-placeholder {
-  color: var(--text-color);
-  font-size: 16px;
-}
-
 .suggestion-content {
   flex: 1;
   min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .suggestion-title {
-  font-weight: 600;
+  font-weight: 500;
   color: var(--text-color);
-  margin-bottom: 2px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  font-size: 14px;
 }
 
 .suggestion-year {
-  font-size: 0.875rem;
-  color: var(--secondary-color);
+  color: var(--text-secondary);
+  font-size: 12px;
+  white-space: nowrap;
 }
 
 .controls {
