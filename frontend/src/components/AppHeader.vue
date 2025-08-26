@@ -430,14 +430,13 @@ const handleLogout = () => {
 
 .search-suggestions {
   position: absolute;
-  top: 100%;
+  top: calc(100% + 2px);
   left: 0;
   right: 40px; /* Account for the search button */
-  background: var(--card-bg);
-  border: 1px solid var(--border-color);
-  border-top: none;
+  background: #ffffff;
+  border: 1px solid #e1e5e9;
   border-radius: 0 0 8px 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   z-index: 1001;
   max-height: 300px;
   overflow-y: auto;
@@ -447,10 +446,11 @@ const handleLogout = () => {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 12px;
+  padding: 10px 12px;
   cursor: pointer;
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid #f0f2f4;
   transition: all 0.2s ease;
+  background: #ffffff;
 }
 
 .suggestion-item:last-child {
@@ -459,7 +459,7 @@ const handleLogout = () => {
 
 .suggestion-item:hover,
 .suggestion-item.selected {
-  background: var(--hover-color);
+  background: #f8f9fa;
 }
 
 .suggestion-content {
@@ -472,7 +472,7 @@ const handleLogout = () => {
 
 .suggestion-title {
   font-weight: 500;
-  color: var(--text-color);
+  color: #2c3e50;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -480,9 +480,35 @@ const handleLogout = () => {
 }
 
 .suggestion-year {
-  color: var(--text-secondary);
+  color: #6c757d;
   font-size: 12px;
   white-space: nowrap;
+}
+
+/* Dark theme support for search suggestions */
+@media (prefers-color-scheme: dark) {
+  .search-suggestions {
+    background: #2c3e50;
+    border-color: #34495e;
+  }
+  
+  .suggestion-item {
+    background: #2c3e50;
+    border-bottom-color: #34495e;
+  }
+  
+  .suggestion-item:hover,
+  .suggestion-item.selected {
+    background: #34495e;
+  }
+  
+  .suggestion-title {
+    color: #ecf0f1;
+  }
+  
+  .suggestion-year {
+    color: #95a5a6;
+  }
 }
 
 .controls {
