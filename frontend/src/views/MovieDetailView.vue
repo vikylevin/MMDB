@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router';
 import axios from 'axios';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { Star, StarFilled, Clock, Calendar, MessageBox, Edit, Delete, ChatDotRound, Check } from '@element-plus/icons-vue';
+import { formatMovieRating } from '../utils/rounding';
 import { isAuthenticated, getCurrentUser, rateMovie, getMovieRating, toggleWatchLater, toggleWatched, toggleLike,
          submitReview, getMovieReviews, toggleReviewLike, addReviewComment, getReviewComments, updateReview, deleteReview } from '../services/api';
 import { currentUser as globalCurrentUser } from '../stores/auth';
@@ -568,18 +569,19 @@ onMounted(() => {
     <!-- Movie Details -->
     <div v-if="!loading && !error && movie" class="movie-content">
       <!-- Backdrop -->
-      <div class="movie-backdrop" :style="{
+      <div class="movie-backdrop" :class="{ 'no-backdrop': !movie.backdrop_path }" :style="{
         backgroundImage: movie.backdrop_path ? 
           `linear-gradient(to bottom, rgba(0,0,0,0.7), rgba(0,0,0,0.9)), url(${imageBaseUrl}${movie.backdrop_path})` : 
-          'none'
+          'linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)'
       }">
         <div class="movie-detail-container">
           <!-- Poster and Basic Info -->
           <div class="movie-detail-header">
             <div class="movie-poster">
               <img 
-                :src="movie.poster_path ? `${posterBaseUrl}${movie.poster_path}` : '/placeholder-poster.jpg'" 
+                :src="movie.poster_path ? `${posterBaseUrl}${movie.poster_path}` : '/src/assets/placeholder-poster.jpg'" 
                 :alt="movie.title" 
+                @error="$event.target.src = '/src/assets/placeholder-poster.jpg'"
               />
             </div>
 
@@ -589,8 +591,9 @@ onMounted(() => {
               <div class="movie-meta">
                 <div class="rating">
                   <el-icon><StarFilled /></el-icon>
-                  <span>{{ (Math.round(movie.vote_average * 10) / 10).toFixed(1) }}</span>
-                  <span class="vote-count">({{ movie.vote_count }} votes)</span>
+                  <span>{{ formatMovieRating(movie.vote_average) }}</span>
+                  <span class="vote-count" v-if="movie.vote_count > 0">({{ movie.vote_count }} votes)</span>
+                  <span class="vote-count" v-else>(No votes yet)</span>
                 </div>
 
                 <div class="meta-item" v-if="movie.runtime">
@@ -602,12 +605,19 @@ onMounted(() => {
                   <el-icon><Calendar /></el-icon>
                   <span>{{ formatReleaseDate(movie.release_date) }}</span>
                 </div>
+                <div class="meta-item" v-else>
+                  <el-icon><Calendar /></el-icon>
+                  <span>Release date TBA</span>
+                </div>
               </div>
 
               <div class="genres" v-if="movie.genres && movie.genres.length">
                 <span v-for="genre in movie.genres" :key="genre.id" class="genre-tag">
                   {{ genre.name }}
                 </span>
+              </div>
+              <div class="genres" v-else>
+                <span class="genre-tag no-genres">Genre information not available</span>
               </div>
 
               <div class="tagline" v-if="movie.tagline">
@@ -616,7 +626,8 @@ onMounted(() => {
 
               <div class="overview">
                 <h3>Overview</h3>
-                <p>{{ movie.overview }}</p>
+                <p v-if="movie.overview">{{ movie.overview }}</p>
+                <p v-else class="no-overview">No overview available for this movie.</p>
               </div>
 
               <div class="actions">
@@ -921,6 +932,11 @@ onMounted(() => {
   color: white;
 }
 
+.movie-backdrop.no-backdrop {
+  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%) !important;
+  background-size: cover;
+}
+
 .movie-detail-container {
   max-width: 1200px;
   margin: 0 auto;
@@ -988,6 +1004,18 @@ onMounted(() => {
   padding: 0.3rem 0.8rem;
   border-radius: 4px;
   font-size: 0.9rem;
+}
+
+.no-genres {
+  background: rgba(128, 128, 128, 0.2);
+  color: rgba(255, 255, 255, 0.7);
+  font-style: italic;
+}
+
+.no-overview {
+  color: rgba(255, 255, 255, 0.7);
+  font-style: italic;
+  margin: 1rem 0;
 }
 
 .tagline {

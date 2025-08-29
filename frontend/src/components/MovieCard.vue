@@ -3,6 +3,7 @@ import { ref, computed, onMounted, onUnmounted, watch, nextTick, inject } from '
 import { useRouter } from 'vue-router';
 import { StarFilled, Clock, View, Check } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
+import { formatMovieRating } from '../utils/rounding';
 import { isAuthenticated, toggleWatchLater, toggleLike, toggleWatched, getLikes, getWatchLater, getWatched, rateMovie, getMovieRating } from '../services/api';
 import { isMovieLiked, isMovieInWatchLater, isMovieWatched, updateMovieStatus, isInitialized } from '../stores/movieStatus';
 import { getMovieRating as getCachedRating, updateMovieRating, isRatingsLoaded } from '../stores/movieRatings';
@@ -224,8 +225,8 @@ const year = computed(() => {
 });
 
 const rating = computed(() => {
-  if (props.movie.rating) return props.movie.rating.toFixed(1);
-  return props.movie.vote_average ? Number(props.movie.vote_average).toFixed(1) : '0.0';
+  if (props.movie.rating) return formatMovieRating(props.movie.rating);
+  return props.movie.vote_average ? formatMovieRating(props.movie.vote_average) : '0.0';
 });
 
 const navigateToDetail = () => {

@@ -56,8 +56,10 @@ def get_popular_movies(page=1, with_genres=None, vote_average_gte=None, vote_ave
         if with_genres:
             params['with_genres'] = with_genres
         if vote_average_gte:
+            # Frontend now uses banker's rounding (same as Python), so no adjustment needed
             params['vote_average.gte'] = vote_average_gte
         if vote_average_lte:
+            # Frontend now uses banker's rounding (same as Python), so no adjustment needed
             params['vote_average.lte'] = vote_average_lte
         if with_original_language:
             params['with_original_language'] = with_original_language
@@ -87,8 +89,10 @@ def get_top_rated_movies(page=1, with_genres=None, vote_average_gte=None, vote_a
         if with_genres:
             params['with_genres'] = with_genres
         if vote_average_gte:
+            # Frontend now uses banker's rounding (same as Python), so no adjustment needed
             params['vote_average.gte'] = vote_average_gte
         if vote_average_lte:
+            # Frontend now uses banker's rounding (same as Python), so no adjustment needed
             params['vote_average.lte'] = vote_average_lte
         if with_original_language:
             params['with_original_language'] = with_original_language
@@ -125,8 +129,10 @@ def get_upcoming_movies(page=1, with_genres=None, vote_average_gte=None, vote_av
         if with_genres:
             params['with_genres'] = with_genres
         if vote_average_gte:
+            # Frontend now uses banker's rounding (same as Python), so no adjustment needed
             params['vote_average.gte'] = vote_average_gte
         if vote_average_lte:
+            # Frontend now uses banker's rounding (same as Python), so no adjustment needed
             params['vote_average.lte'] = vote_average_lte
         if with_original_language:
             params['with_original_language'] = with_original_language
