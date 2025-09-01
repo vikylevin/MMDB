@@ -476,10 +476,17 @@
           <div v-if="userReviews.length" class="reviews-grid">
             <div v-for="review in userReviews" :key="review.id || review.movie_id" class="review-card">
               <div class="review-movie-poster" @click="goToMovieDetail(review.movie_id)">
-                <img 
-                  :src="review.movie_poster ? `https://image.tmdb.org/t/p/w200${review.movie_poster}` : '/placeholder-poster.jpg'" 
-                  :alt="review.movie_title" 
+                <ResponsiveImage 
+                  v-if="review.movie_poster"
+                  :src="review.movie_poster"
+                  :alt="review.movie_title"
+                  :display-width="120"
+                  :display-height="180"
+                  loading="lazy"
                 />
+                <div v-else class="poster-placeholder">
+                  <span>{{ review.movie_title }}</span>
+                </div>
                 <div class="poster-overlay">
                   <el-icon><MoreFilled /></el-icon>
                   <span>View Movie</span>
@@ -536,6 +543,7 @@ import { useRouter } from 'vue-router';
 import { User, Star, Clock, Check, DataAnalysis, PieChart, Edit, Close, MoreFilled, Lock } from '@element-plus/icons-vue';
 import { getLikes, getWatchLater, getWatched, getUserReviews } from '../services/api';
 import ProfileMovieCard from '../components/ProfileMovieCard.vue';
+import ResponsiveImage from '../components/ResponsiveImage.vue';
 import { ElMessage } from 'element-plus';
 import { initializeMovieStatus } from '../stores/movieStatus';
 import { initializeMovieRatings } from '../stores/movieRatings';

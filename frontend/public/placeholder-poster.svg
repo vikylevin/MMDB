@@ -1,0 +1,11 @@
+/* Placeholder poster image - 200x300 movie poster placeholder */
+<svg width="200" height="300" xmlns="http://www.w3.org/2000/svg">
+  <rect width="200" height="300" fill="#f5f5f5"/>
+  <rect x="10" y="10" width="180" height="280" fill="#e0e0e0" stroke="#d0d0d0" stroke-width="1"/>
+  <circle cx="100" cy="120" r="25" fill="#c0c0c0"/>
+  <rect x="60" y="160" width="80" height="8" fill="#c0c0c0" rx="4"/>
+  <rect x="70" y="180" width="60" height="6" fill="#d0d0d0" rx="3"/>
+  <rect x="75" y="200" width="50" height="6" fill="#d0d0d0" rx="3"/>
+  <text x="100" y="250" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#999">Movie Poster</text>
+  <text x="100" y="270" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#bbb">Unavailable</text>
+</svg>

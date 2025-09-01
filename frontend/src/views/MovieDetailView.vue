@@ -5,6 +5,7 @@ import axios from 'axios';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { Star, StarFilled, Clock, Calendar, MessageBox, Edit, Delete, ChatDotRound, Check } from '@element-plus/icons-vue';
 import { formatMovieRating } from '../utils/rounding';
+import ResponsiveImage from '../components/ResponsiveImage.vue';
 import { isAuthenticated, getCurrentUser, rateMovie, getMovieRating, toggleWatchLater, toggleWatched, toggleLike,
          submitReview, getMovieReviews, toggleReviewLike, addReviewComment, getReviewComments, updateReview, deleteReview } from '../services/api';
 import { currentUser as globalCurrentUser } from '../stores/auth';
@@ -59,8 +60,20 @@ const isLiked = computed(() => {
   return isMovieLiked(Number(movieId.value));
 });
 
-const imageBaseUrl = 'https://image.tmdb.org/t/p/original';
-const posterBaseUrl = 'https://image.tmdb.org/t/p/w500';
+import { getResponsiveBackdropUrl, getResponsivePosterUrl } from '../utils/imageUtils.js';
+
+// Optimized image URLs based on viewport
+const getOptimizedBackdropUrl = (backdropPath) => {
+  if (!backdropPath) return '';
+  // Use responsive backdrop URL based on screen width
+  const screenWidth = window.innerWidth;
+  return getResponsiveBackdropUrl(backdropPath, screenWidth);
+};
+
+const getOptimizedPosterUrl = (posterPath) => {
+  if (!posterPath) return '';
+  return getResponsivePosterUrl(posterPath, 300); // Detail view posters are larger
+};
 
 // Check if user is authenticated
 const checkAuthentication = () => {
@@ -571,18 +584,25 @@ onMounted(() => {
       <!-- Backdrop -->
       <div class="movie-backdrop" :class="{ 'no-backdrop': !movie.backdrop_path }" :style="{
         backgroundImage: movie.backdrop_path ? 
-          `linear-gradient(to bottom, rgba(0,0,0,0.7), rgba(0,0,0,0.9)), url(${imageBaseUrl}${movie.backdrop_path})` : 
+          `linear-gradient(to bottom, rgba(0,0,0,0.7), rgba(0,0,0,0.9)), url(${getOptimizedBackdropUrl(movie.backdrop_path)})` : 
           'linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)'
       }">
         <div class="movie-detail-container">
           <!-- Poster and Basic Info -->
           <div class="movie-detail-header">
             <div class="movie-poster">
-              <img 
-                :src="movie.poster_path ? `${posterBaseUrl}${movie.poster_path}` : '/src/assets/placeholder-poster.jpg'" 
-                :alt="movie.title" 
-                @error="$event.target.src = '/src/assets/placeholder-poster.jpg'"
+              <ResponsiveImage 
+                v-if="movie.poster_path"
+                :src="movie.poster_path"
+                :alt="movie.title"
+                :display-width="300"
+                :display-height="450"
+                class="poster-image"
+                loading="eager"
               />
+              <div v-else class="poster-placeholder">
+                <span>{{ movie.title }}</span>
+              </div>
             </div>
 
             <div class="movie-info">

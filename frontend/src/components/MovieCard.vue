@@ -3,6 +3,7 @@ import { ref, computed, onMounted, onUnmounted, watch, nextTick, inject } from '
 import { useRouter } from 'vue-router';
 import { StarFilled, Clock, View, Check } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
+import ResponsiveImage from './ResponsiveImage.vue';
 import { formatMovieRating } from '../utils/rounding';
 import { isAuthenticated, toggleWatchLater, toggleLike, toggleWatched, getLikes, getWatchLater, getWatched, rateMovie, getMovieRating } from '../services/api';
 import { isMovieLiked, isMovieInWatchLater, isMovieWatched, updateMovieStatus, isInitialized } from '../stores/movieStatus';
@@ -201,17 +202,7 @@ onUnmounted(() => {
   window.removeEventListener('resize', checkTextOverflow);
 });
 
-const posterUrl = computed(() => {
-  if (props.movie.poster_path) {
-    // Use higher quality image for better display
-    return `https://image.tmdb.org/t/p/w500${props.movie.poster_path}`;
-  }
-  // Support for pre-processed poster URL
-  if (props.movie.poster && props.movie.poster.startsWith('http')) {
-    return props.movie.poster;
-  }
-  return ''; // No need for placeholder image as we show title instead
-});
+// Removed posterUrl computed property - now handled by ResponsiveImage component
 
 const title = computed(() => props.movie.title);
 const year = computed(() => {
@@ -328,7 +319,14 @@ const handleToggleWatchlist = handleToggleWatchLater;
   >
     <div class="poster-container" @click="navigateToDetail">
       <template v-if="props.movie.poster_path">
-        <img :src="posterUrl" :alt="movie.title" class="movie-poster" />
+        <ResponsiveImage 
+          :src="props.movie.poster_path"
+          :alt="movie.title"
+          :display-width="200"
+          :display-height="300"
+          class="movie-poster"
+          loading="lazy"
+        />
       </template>
       <template v-else>
         <div class="poster-placeholder">

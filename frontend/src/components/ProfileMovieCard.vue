@@ -1,6 +1,7 @@
 <script setup>
 import { computed } from 'vue';
 import { useRouter } from 'vue-router';
+import ResponsiveImage from './ResponsiveImage.vue';
 
 const router = useRouter();
 const props = defineProps({
@@ -10,20 +11,13 @@ const props = defineProps({
   }
 });
 
-const posterUrl = computed(() => {
-  // Handle TMDB poster_path
-  if (props.movie.poster_path && typeof props.movie.poster_path === 'string') {
-    if (props.movie.poster_path.startsWith('http')) {
-      return props.movie.poster_path;
-    }
-    return `https://image.tmdb.org/t/p/w342${props.movie.poster_path}`;
+// Get the poster path for ResponsiveImage component
+const posterPath = computed(() => {
+  if (props.movie.poster_path) {
+    return props.movie.poster_path;
   }
-  // Handle poster (full URL)
-  if (props.movie.poster && typeof props.movie.poster === 'string') {
-    if (props.movie.poster.startsWith('http')) {
-      return props.movie.poster;
-    }
-    return `https://image.tmdb.org/t/p/w342${props.movie.poster}`;
+  if (props.movie.poster && !props.movie.poster.startsWith('http')) {
+    return props.movie.poster;
   }
   return '';
 });
@@ -38,8 +32,15 @@ const navigateToDetail = () => {
 <template>
   <el-card :body-style="{ padding: '0px' }" class="profile-movie-card" @click="navigateToDetail">
     <div class="poster-container">
-      <template v-if="posterUrl">
-        <img :src="posterUrl" :alt="movie.title" class="movie-poster" />
+      <template v-if="posterPath">
+        <ResponsiveImage 
+          :src="posterPath"
+          :alt="movie.title"
+          :display-width="180"
+          :display-height="270"
+          class="movie-poster"
+          loading="lazy"
+        />
       </template>
       <template v-else>
         <div class="poster-placeholder">
