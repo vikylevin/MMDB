@@ -174,15 +174,15 @@ const fetchLanguages = async () => {
     // Fallback to comprehensive language list if API fails
     allLanguages.value = [
       { iso_639_1: 'en', english_name: 'English', name: 'English' },
-      { iso_639_1: 'zh', english_name: 'Chinese (Mandarin)', name: '普通话' },
-      { iso_639_1: 'cn', english_name: 'Chinese (Cantonese)', name: '广州话' },
+      { iso_639_1: 'zh', english_name: 'Chinese (Mandarin)', name: 'Chinese (Mandarin)' },
+      { iso_639_1: 'cn', english_name: 'Chinese (Cantonese)', name: 'Chinese (Cantonese)' },
       { iso_639_1: 'es', english_name: 'Spanish', name: 'Español' },
       { iso_639_1: 'hi', english_name: 'Hindi', name: 'हिन्दी' },
       { iso_639_1: 'ar', english_name: 'Arabic', name: 'العربية' },
       { iso_639_1: 'pt', english_name: 'Portuguese', name: 'Português' },
       { iso_639_1: 'bn', english_name: 'Bengali', name: 'বাংলা' },
       { iso_639_1: 'ru', english_name: 'Russian', name: 'Русский' },
-      { iso_639_1: 'ja', english_name: 'Japanese', name: '日本語' },
+      { iso_639_1: 'ja', english_name: 'Japanese', name: 'Japanese' },
       { iso_639_1: 'jv', english_name: 'Javanese', name: '' },
       { iso_639_1: 'ko', english_name: 'Korean', name: '한국어' },
       { iso_639_1: 'fr', english_name: 'French', name: 'Français' },

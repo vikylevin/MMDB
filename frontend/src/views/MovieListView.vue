@@ -125,7 +125,7 @@ onMounted(() => {
         <el-row justify="center" class="pagination-row">
           <el-pagination
             v-if="totalPages > 1"
-            :current-page="currentPage"
+            v-model:current-page="currentPage"
             :page-size="20"
             :total="totalPages * 20"
             @current-change="handlePageChange"
@@ -170,18 +170,26 @@ onMounted(() => {
   justify-content: center;
 }
 
-:deep(.el-pagination) {
-  --el-pagination-hover-color: var(--primary-color);
-  --el-pagination-button-color: var(--text-color);
+/* Pagination styling with higher specificity */
+.pagination-row :deep(.el-pagination) {
+  --el-pagination-hover-color: #333333;
+  --el-pagination-button-color: #666666;
   --el-pagination-font-size: 14px;
 }
 
-:deep(.el-pagination.is-background .el-pager li:not(.is-disabled).is-active) {
-  background-color: var(--primary-color);
+.pagination-row :deep(.el-pagination.is-background .el-pager li:not(.is-disabled).is-active) {
+  background-color: #333333 !important;
+  border-color: #333333 !important;
+  color: white !important;
 }
 
-:deep(.el-pagination .el-input__inner) {
+.pagination-row :deep(.el-pagination.is-background .el-pager li:not(.is-disabled):hover) {
+  color: #333333 !important;
+}
+
+.pagination-row :deep(.el-pagination .el-input__inner) {
   text-align: center;
+  color: #333333;
 }
 
 .movies-grid {
